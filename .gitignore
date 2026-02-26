@@ -1,6 +1,3 @@
-# Large files
-data/*
-
 # python env
 bin/
 lib/
@@ -8,7 +5,6 @@ include/
 lib64
 pyvenv.cfg
 share/
-summative/
 
 # IDE files
 .idea/
@@ -37,7 +33,3 @@ Thumbs.db
 # OTHERS
 test_queries/*
 test_queries/*
-yellow_tripdata_2019-01.csv
-taxi_zones.zip
-taxi_zone_lookup.csv
-Urban_Mobility_Data_System/
