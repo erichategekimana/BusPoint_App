@@ -33,3 +33,7 @@ Thumbs.db
 # OTHERS
 test_queries/*
 test_queries/*
+
+# Mobile phone app
+flutter_application_1
+android*
