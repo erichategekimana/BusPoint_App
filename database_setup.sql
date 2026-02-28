@@ -1,3 +1,9 @@
+drop database if exists buspoint_db;
+
+
+create database buspoint_db;
+\c buspoint_db;
+
 create table if not exists users
 (
     id uuid default gen_random_uuid() not null
