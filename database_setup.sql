@@ -50,7 +50,7 @@ create table if not exists stops
         primary key,
     name       varchar(100)                                       not null,
     latitude   numeric(10, 8)                                     not null,
-    longtitude numeric(10, 8)                                     not null,
+    longitude numeric(10, 8)                                     not null,
     is_active  boolean                  default true,
     created_at timestamp with time zone default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone default CURRENT_TIMESTAMP,
