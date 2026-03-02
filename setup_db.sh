@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script helps set up the postgresql database, creates the user/role, and runs the table creation script.
+# This script helps set up the postgresql database, creates the user/role, runs the table creation script, and create python environment.
 
 
 
