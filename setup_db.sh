@@ -41,23 +41,6 @@ fi
 
 echo "Setting up the PostgreSQL database..."
 echo ""
-# Create the user/role
-
-# Prompt the user for the username and password for the PostgreSQL role
-read -p "Enter new username for the PostgreSQL (Ex: john): " username
-# Validate that the password is at least 4 characters long
-while true; do
-    read -p "Create password for the new postgreSQL user(Ex: john123): " password
-    if [[ ${#password} -ge 4 ]]; then
-        break
-    else
-        echo "Password must be at least 4 characters long. Please try again."
-    fi
-done
-
-# Create the role with SUPERUSER and CREATEDB privileges
-sudo -u postgres psql -c "CREATE ROLE $username WITH LOGIN SUPERUSER PASSWORD '$password';"
-sudo -u postgres psql -c "ALTER ROLE $username WITH CREATEDB;"
 echo ""
 
 # This will run table creation script(create tables, indexes, etc.)
@@ -93,6 +76,8 @@ if [ ! -d "$VENV_DIR" ]; then
 else
     echo "Virtual environment found."
 fi
+
+
 
 # 2. Activate and update pip/dependencies
 echo "Installing/Updating dependencies..."
