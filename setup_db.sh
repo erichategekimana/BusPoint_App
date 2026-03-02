@@ -22,6 +22,7 @@ then
 	    echo "Please install it using: sudo apt update && sudo apt install postgresql postgresql-contrib"
 	    echo ""
 	    exit 1
+	  fi
 else
     echo "PostgreSQL found."
 fi
@@ -61,12 +62,14 @@ echo ""
 
 # This will run table creation script(create tables, indexes, etc.)
 echo "Initialize the Database structure..."
-psql -U $username -d postgres -f database_setup.sql
+sudo -u postgres psql -d postgres -f database_setup.sql
 
 echo "Database setup complete!"
 
 # Add the database URI to .bashrc for easy access in the future
-echo "export BP_POSTGRES_DATABASE_URI=\"postgresql://$username:$password@localhost:5432/buspoint_db\"" >> ~/.bashrc
+
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+echo "export BP_POSTGRES_DATABASE_URI=\"postgresql://postgres:postgres@localhost:5432/buspoint_db\"" >> ~/.bashrc
 echo ""
 
 
