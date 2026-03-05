@@ -52,7 +52,7 @@ echo "Database setup complete!"
 # Add the database URI to .bashrc for easy access in the future
 
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-echo "export BP_POSTGRES_DATABASE_URI=\"postgresql://postgres:postgres@localhost:5432/buspoint_db\"" >> ~/.bashrc
+echo "export BP_POSTGRES_DATABASE_URI=\'postgresql://postgres:postgres@localhost:5432/buspoint_db\'" >> ~/.bashrc
 echo ""
 
 
