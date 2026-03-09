@@ -37,3 +37,6 @@ test_queries/*
 # Mobile phone app
 flutter_application_1
 android*
+
+requirements.txt
+README.md
