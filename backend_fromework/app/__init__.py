@@ -1,4 +1,4 @@
-from flask import Flask, jsonfy
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from config import Config
@@ -23,21 +23,21 @@ def create_app():
     register_error_handlers(app)
 
     # After db is ready, we import all blueprints
-    >
-    >
-    >
-    >
-    >
-    >
-    ...
+#    >
+#    >
+#    >
+#    >
+#    >
+#    >
+#    ...
 
     # register endpoints
-    >
-    >
-    >
-    >
-    >
-    ...
+#    >
+#    >
+#    >
+#    >
+#    >
+#    ...
 
     def shutdown_session(exception=None):
         db.session.remove()
