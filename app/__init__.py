@@ -24,9 +24,10 @@ def create_app() -> Flask:
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-    from .routes import api_bp
+    from .api import api_blueprints
 
-    app.register_blueprint(api_bp)
+    for blueprint in api_blueprints:
+        app.register_blueprint(blueprint)
     register_error_handlers(app)
 
     @app.teardown_appcontext

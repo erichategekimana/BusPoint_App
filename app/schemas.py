@@ -127,3 +127,17 @@ class BusLocationPublic(BaseModel):
     speed: float | None
     heading: float | None
     last_updated: datetime
+
+
+class RouteStopCreateRequest(BaseModel):
+    route_id: UUID
+    stop_id: UUID
+    stop_order: int = Field(ge=1)
+    estimated_minutes_from_start: int | None = Field(default=None, ge=0)
+
+
+class RouteStopUpdateRequest(BaseModel):
+    route_id: UUID | None = None
+    stop_id: UUID | None = None
+    stop_order: int | None = Field(default=None, ge=1)
+    estimated_minutes_from_start: int | None = Field(default=None, ge=0)

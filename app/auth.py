@@ -1,72 +1,59 @@
 import jwt
-from datetime import datetime
+from datetime import datetime, timedelta
+from flask import current_app, request, jsonify, g
 from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from flask import current_app, g, jsonify, request
-from werkzeug.security import check_password_hash, generate_password_hash
-
-
-def hash_password(plain: str) -> str:
+def hash_password(plain):
     return generate_password_hash(plain)
 
+def verify_password(hash, plain):
+    return check_password_hash(hash, plain)
 
-def verify_password(password_hash: str, plain: str) -> bool:
-    return check_password_hash(password_hash, plain)
-
-
-def create_access_token(identity: dict) -> str:
+def create_access_token(identity: dict):
     secret = current_app.config["JWT_SECRET"]
-    algorithm = current_app.config["JWT_ALGORITHM"]
-    expires = datetime.utcnow() + current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
-
+    algo = current_app.config["JWT_ALGORITHM"]
+    exp = datetime.utcnow() + current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
     payload = {
         "sub": identity,
-        "exp": expires,
-        "iat": datetime.utcnow(),
+        "exp": exp,
+        "iat": datetime.utcnow()
     }
-    token = jwt.encode(payload, secret, algorithm=algorithm)
+    token = jwt.encode(payload, secret, algorithm=algo)
+    # PyJWT returns str in newer versions; ensure string type
     if isinstance(token, bytes):
-        return token.decode("utf-8")
+        token = token.decode("utf-8")
     return token
 
-
-def decode_token(token: str):
+def decode_token(token):
     secret = current_app.config["JWT_SECRET"]
-    algorithm = current_app.config["JWT_ALGORITHM"]
+    algo = current_app.config["JWT_ALGORITHM"]
     try:
-        return jwt.decode(token, secret, algorithms=[algorithm])
+        payload = jwt.decode(token, secret, algorithms=[algo])
+        return payload
     except jwt.ExpiredSignatureError:
         return {"error": "token_expired"}
     except jwt.InvalidTokenError:
         return {"error": "invalid_token"}
 
-
-def jwt_required(roles: set[str] | None = None):
+def jwt_required():
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            auth_header = request.headers.get("Authorization")
-            if not auth_header:
+            auth = request.headers.get("Authorization", None)
+            if not auth:
                 return jsonify({"error": "authorization_header_missing"}), 401
 
-            parts = auth_header.split()
-            if len(parts) != 2 or parts[0].lower() != "bearer":
+            parts = auth.split()
+            if parts[0].lower() != "bearer" or len(parts) != 2:
                 return jsonify({"error": "invalid_authorization_header"}), 401
 
-            payload = decode_token(parts[1])
-            if isinstance(payload, dict) and payload.get("error"):
-                return jsonify({"error": payload["error"]}), 401
+            token = parts[1]
+            data = decode_token(token)
+            if isinstance(data, dict) and data.get("error"):
+                return jsonify({"error": data["error"]}), 401
 
-            identity = payload.get("sub") or {}
-            g.current_user = identity
-
-            if roles:
-                user_role = str(identity.get("role", "")).lower()
-                if user_role not in roles:
-                    return jsonify({"error": "forbidden"}), 403
-
+            g.current_user = data.get("sub")
             return fn(*args, **kwargs)
-
         return wrapper
-
     return decorator
