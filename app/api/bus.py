@@ -3,10 +3,11 @@ from __future__ import annotations
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from app.database import db
 from app.models import Bus
+from app.schemas import BusCreateRequest, BusUpdateRequest
 
 
 bus_bp = Blueprint("bus_api", __name__, url_prefix="/api")
@@ -28,20 +29,6 @@ def validate_payload(schema, payload: dict):
         return schema.model_validate(payload), None
     except ValidationError as exc:
         return None, model_errors(exc.errors())
-
-
-class BusCreateRequest(BaseModel):
-    plate_number: str = Field(min_length=3, max_length=15)
-    bus_type: str | None = Field(default=None, max_length=50)
-    capacity: int = Field(ge=1)
-    is_active: bool | None = None
-
-
-class BusUpdateRequest(BaseModel):
-    plate_number: str | None = Field(default=None, min_length=3, max_length=15)
-    bus_type: str | None = Field(default=None, max_length=50)
-    capacity: int | None = Field(default=None, ge=1)
-    is_active: bool | None = None
 
 
 def parse_bool(raw: str | None) -> bool | None:

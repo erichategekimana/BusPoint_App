@@ -3,10 +3,11 @@ from __future__ import annotations
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from app.database import db
 from app.models import Route
+from app.schemas import RouteCreateRequest, RouteUpdateRequest
 
 
 route_bp = Blueprint("route_api", __name__, url_prefix="/api")
@@ -28,18 +29,6 @@ def validate_payload(schema, payload: dict):
         return schema.model_validate(payload), None
     except ValidationError as exc:
         return None, model_errors(exc.errors())
-
-
-class RouteCreateRequest(BaseModel):
-    route_code: str = Field(min_length=1, max_length=20)
-    name: str = Field(min_length=2, max_length=100)
-    is_active: bool | None = None
-
-
-class RouteUpdateRequest(BaseModel):
-    route_code: str | None = Field(default=None, min_length=1, max_length=20)
-    name: str | None = Field(default=None, min_length=2, max_length=100)
-    is_active: bool | None = None
 
 
 def parse_bool(raw: str | None) -> bool | None:

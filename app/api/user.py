@@ -3,11 +3,12 @@ from __future__ import annotations
 from uuid import UUID
 
 from flask import Blueprint, g, jsonify, request
-from pydantic import BaseModel, EmailStr, Field, ValidationError
+from pydantic import ValidationError
 
 from app.auth import create_access_token, hash_password, jwt_required, verify_password
 from app.database import db
 from app.models import User
+from app.schemas import AuthUpdateRequest, LoginRequest, RegisterRequest, UserCreateRequest, UserUpdateRequest
 
 
 user_bp = Blueprint("user_api", __name__, url_prefix="/api")
@@ -29,43 +30,6 @@ def validate_payload(schema, payload: dict):
         return schema.model_validate(payload), None
     except ValidationError as exc:
         return None, model_errors(exc.errors())
-
-
-class UserCreateRequest(BaseModel):
-    full_name: str = Field(min_length=2, max_length=100)
-    phone_number: str = Field(min_length=7, max_length=15)
-    email: EmailStr | None = None
-    password: str = Field(min_length=6, max_length=128)
-    role: str = Field(default="passenger")
-
-
-class UserUpdateRequest(BaseModel):
-    full_name: str | None = Field(default=None, min_length=2, max_length=100)
-    phone_number: str | None = Field(default=None, min_length=7, max_length=15)
-    email: EmailStr | None = None
-    password: str | None = Field(default=None, min_length=6, max_length=128)
-    role: str | None = None
-
-
-class RegisterRequest(BaseModel):
-    full_name: str = Field(min_length=2, max_length=100)
-    phone_number: str = Field(min_length=7, max_length=15)
-    email: EmailStr | None = None
-    password: str = Field(min_length=6, max_length=128)
-    role: str = Field(default="passenger")
-
-
-class LoginRequest(BaseModel):
-    phone_number: str | None = None
-    email: EmailStr | None = None
-    password: str = Field(min_length=6, max_length=128)
-
-
-class AuthUpdateRequest(BaseModel):
-    full_name: str | None = Field(default=None, min_length=2, max_length=100)
-    phone_number: str | None = Field(default=None, min_length=7, max_length=15)
-    email: EmailStr | None = None
-    password: str | None = Field(default=None, min_length=6, max_length=128)
 
 
 @user_bp.post("/auth/register")

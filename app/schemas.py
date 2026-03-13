@@ -34,6 +34,69 @@ class LoginRequest(BaseModel):
         return value
 
 
+class UserCreateRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=100)
+    phone_number: str = Field(min_length=7, max_length=15)
+    email: EmailStr | None = None
+    password: str = Field(min_length=6, max_length=128)
+    role: str = Field(default="passenger")
+
+
+class UserUpdateRequest(BaseModel):
+    full_name: str | None = Field(default=None, min_length=2, max_length=100)
+    phone_number: str | None = Field(default=None, min_length=7, max_length=15)
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=128)
+    role: str | None = None
+
+
+class AuthUpdateRequest(BaseModel):
+    full_name: str | None = Field(default=None, min_length=2, max_length=100)
+    phone_number: str | None = Field(default=None, min_length=7, max_length=15)
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=6, max_length=128)
+
+
+class BusCreateRequest(BaseModel):
+    plate_number: str = Field(min_length=3, max_length=15)
+    bus_type: str | None = Field(default=None, max_length=50)
+    capacity: int = Field(ge=1)
+    is_active: bool | None = None
+
+
+class BusUpdateRequest(BaseModel):
+    plate_number: str | None = Field(default=None, min_length=3, max_length=15)
+    bus_type: str | None = Field(default=None, max_length=50)
+    capacity: int | None = Field(default=None, ge=1)
+    is_active: bool | None = None
+
+
+class RouteCreateRequest(BaseModel):
+    route_code: str = Field(min_length=1, max_length=20)
+    name: str = Field(min_length=2, max_length=100)
+    is_active: bool | None = None
+
+
+class RouteUpdateRequest(BaseModel):
+    route_code: str | None = Field(default=None, min_length=1, max_length=20)
+    name: str | None = Field(default=None, min_length=2, max_length=100)
+    is_active: bool | None = None
+
+
+class StopCreateRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    is_active: bool | None = None
+
+
+class StopUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=100)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    is_active: bool | None = None
+
+
 class UserPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

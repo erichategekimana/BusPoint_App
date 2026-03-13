@@ -15,7 +15,8 @@ def create_access_token(identity: dict):
     algo = current_app.config["JWT_ALGORITHM"]
     exp = datetime.utcnow() + current_app.config["JWT_ACCESS_TOKEN_EXPIRES"]
     payload = {
-        "sub": identity,
+        "sub": str(identity["user_id"]),
+        "identity": identity,   
         "exp": exp,
         "iat": datetime.utcnow()
     }
@@ -53,7 +54,7 @@ def jwt_required():
             if isinstance(data, dict) and data.get("error"):
                 return jsonify({"error": data["error"]}), 401
 
-            g.current_user = data.get("sub")
+            g.current_user = data.get("identity")
             return fn(*args, **kwargs)
         return wrapper
     return decorator

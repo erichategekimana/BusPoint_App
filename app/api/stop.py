@@ -3,10 +3,11 @@ from __future__ import annotations
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from app.database import db
 from app.models import Stop
+from app.schemas import StopCreateRequest, StopUpdateRequest
 
 
 stop_bp = Blueprint("stop_api", __name__, url_prefix="/api")
@@ -28,20 +29,6 @@ def validate_payload(schema, payload: dict):
         return schema.model_validate(payload), None
     except ValidationError as exc:
         return None, model_errors(exc.errors())
-
-
-class StopCreateRequest(BaseModel):
-    name: str = Field(min_length=2, max_length=100)
-    latitude: float = Field(ge=-90, le=90)
-    longitude: float = Field(ge=-180, le=180)
-    is_active: bool | None = None
-
-
-class StopUpdateRequest(BaseModel):
-    name: str | None = Field(default=None, min_length=2, max_length=100)
-    latitude: float | None = Field(default=None, ge=-90, le=90)
-    longitude: float | None = Field(default=None, ge=-180, le=180)
-    is_active: bool | None = None
 
 
 def parse_bool(raw: str | None) -> bool | None:
