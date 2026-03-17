@@ -9,3 +9,7 @@ from .booking_model import Booking
 from .payment_model import Payment
 from .notification_model import Notification
 from .bus_location_model import BusLocation
+from .trip_model import Trip
+from .booking_model import Booking
+from .payment_model import Payment
+from . notification_model import Notification
