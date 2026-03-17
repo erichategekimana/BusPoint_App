@@ -142,3 +142,17 @@ def logout():
     # For JWT, logout is typically handled on the client side by deleting the token.
     # Optionally, you can implement token blacklisting on the server side if needed.
     return jsonify({"message": "logout successful"}), 200
+
+# to improve privacy, user can delete their account. This will remove all their data from the system.
+@auth_bp.route('/me', methods=['DELETE'])
+@jwt_required
+@db_commit_or_rollback
+def delete_account():
+    user_identity = g.current_user
+    user = User.query.get(user_identity['id'])
+
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    
+    db.session.delete(user)
+    return jsonify({"message": "account deleted successfully"}), 200
