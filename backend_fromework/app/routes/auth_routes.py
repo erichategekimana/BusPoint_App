@@ -73,7 +73,7 @@ def login_user(validated_data: UserLoginSchema):
 
 """ returns the profile of the currently logged-in user."""
 @auth_bp.route('/me', methods=['GET'])
-@jwt_required()
+@jwt_required
 def get_current_user():
 
     # g.current_user is set by the jwt_required decorator after validating the token
