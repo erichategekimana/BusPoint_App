@@ -11,3 +11,12 @@ class UserRegistrationSchema(BaseModel):
 class UserLoginSchema(BaseModel):
     phone_number: str = Field(..., min_lenght=10, max_lenght=15)
     password: str = Field(...)
+
+class UserUpdateSchema(BaseModel):
+    full_name: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[str] = None
+
+
+class PasswordChangeSchema(BaseModel):
+    old_password: str = Field(...)
+    new_password: str = Field(..., min_length=6)
