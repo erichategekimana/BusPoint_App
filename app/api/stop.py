@@ -64,6 +64,9 @@ def create_stop():
     validated, error = validate_payload(StopCreateRequest, payload)
     if error:
         return error
+    
+    if Stop.query.filter_by(name=validated.name.strip()).first():
+        return jsonify({"error": "stop_already_exists"}), 409
 
     stop = Stop(
         name=validated.name.strip(),
