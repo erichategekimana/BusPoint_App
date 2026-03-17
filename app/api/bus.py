@@ -10,7 +10,7 @@ from app.models import Bus
 from app.schemas import BusCreateRequest, BusUpdateRequest
 
 
-bus_bp = Blueprint("bus_api", __name__, url_prefix="/api")
+bus_bp = Blueprint('bus_api', __name__, url_prefix="/api")
 
 
 def parse_uuid(raw_value: str, field_name: str):
