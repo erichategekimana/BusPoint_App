@@ -23,7 +23,7 @@ def create_app():
     register_error_handlers(app)
 
     # After db is ready, we import all blueprints
-#    >
+    from app.routes.auth_routes import auth_bp
 #    >
 #    >
 #    >
@@ -32,6 +32,7 @@ def create_app():
 #    ...
 
     # register endpoints
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
 #    >
 #    >
 #    >
