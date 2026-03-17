@@ -1,13 +1,15 @@
 from flask import Blueprint, jsonify, g
 from ..database import db
 from ..models import User
-from ..schemas import UserRegistrationSchema, UserLoginSchema
+from ..schemas import UserRegistrationSchema, UserLoginSchema, UserUpdateSchema, PasswordChangeSchema
 from ..utils import validate_json, db_commit_or_rollback
 from ..auth import hash_password, verify_password, create_access_token, jwt_required
 
 
 # create the blueprint
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+
 
 @auth_bp.route('/register', methods=['POST'])
 @validate_json(UserRegistrationSchema)
@@ -84,3 +86,59 @@ def get_current_user():
         return jsonify({"error": "user not found"}), 404
     
     return jsonify({"user": user.to_dict()}), 200
+
+
+""" allows the logged-in user to update their profile information."""
+@auth_bp.route('/me', methods=['PUT'])
+@jwt_required
+@validate_json(UserUpdateSchema)
+@db_commit_or_rollback
+def update_profile(validated_data: UserUpdateSchema):
+    user_identity = g.current_user
+    user = User.query.get(user_identity['id'])
+
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    
+    # Update fields if provided
+    if validated_data.full_name is not None:
+        user.fullname = validated_data.full_name
+    if validated_data.email is not None:
+        # Check if email is already taken by another user
+        existing_email = User.query.filter_by(email=validated_data.email).first()
+        if existing_email and existing_email.id != user.id:
+            return jsonify({"error": "Email already registered"}), 400
+        user.email = validated_data.email
+
+    db.session.add(user)
+    return jsonify({"message": "profile updated successfully", "user": user.to_dict()}), 200
+
+# allows the logged-in user to change their password.
+@auth_bp.route('/change-password', methods=['POST'])
+@jwt_required
+@validate_json(PasswordChangeSchema)
+@db_commit_or_rollback
+def change_password(validated_data: PasswordChangeSchema):
+    user_identity = g.current_user
+    user = User.query.get(user_identity['id'])
+
+    if not user:
+        return jsonify({"error": "user not found"}), 404
+    
+    # Verify old password
+    if not verify_password(user.password_hash, validated_data.old_password):
+        return jsonify({"error": "unauthorized", "message": "Old password is incorrect"}), 401
+    
+    # Hash new password and update
+    user.password_hash = hash_password(validated_data.new_password)
+    db.session.add(user)
+    return jsonify({"message": "password changed successfully"}), 200
+
+
+# logut route
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required
+def logout():
+    # For JWT, logout is typically handled on the client side by deleting the token.
+    # Optionally, you can implement token blacklisting on the server side if needed.
+    return jsonify({"message": "logout successful"}), 200
