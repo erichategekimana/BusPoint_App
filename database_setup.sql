@@ -4,6 +4,8 @@ drop database if exists buspoint_db;
 create database buspoint_db;
 \c buspoint_db;
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 
 create table if not exists users
@@ -48,8 +50,6 @@ create table if not exists routes
 );
 
 
-
-CREATE EXTENSION if not exists postgis;
 
 create table if not exists stops
 (
