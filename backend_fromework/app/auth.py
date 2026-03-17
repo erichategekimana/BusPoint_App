@@ -56,3 +56,26 @@ def jwt_required(fn):
         g.current_user = data.get("sub")
         return fn(*args, **kwargs)
     return wrapper
+
+
+
+def roles_required(*roles):
+    """
+    Decorator to restrict access to specific roles.
+    Usage: @roles_required('admin', 'driver')
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            # g.current_user is populated by @jwt_required
+            user_role = g.current_user.get('role')
+
+            if user_role not in roles:
+                return jsonify({
+                    "error": "forbidden", 
+                    "message": f"Access denied. Required roles: {', '.join(roles)}"
+                }), 403
+            
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
