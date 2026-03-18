@@ -37,3 +37,29 @@ def db_commit_or_rollback(fn):
             # re-raise so Flask error handler can produce 500 or handle accordingly
             raise
     return wrapper
+
+
+
+def validate_query(schema):
+    """
+    Decorator to validate URL Query Parameters (GET requests) using Pydantic.
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            # request.args.to_dict() converts the URL ?key=value into a dict
+            payload = request.args.to_dict()
+            
+            try:
+                # Pydantic validates and converts strings to UUIDs, dates, etc.
+                validated = schema(**payload)
+            except ValidationError as e:
+                return jsonify({
+                    "error": "validation_error", 
+                    "details": e.errors()
+                }), 400
+
+            # Pass the validated object to the route function
+            return fn(validated, *args, **kwargs)
+        return wrapper
+    return decorator
