@@ -20,3 +20,8 @@ class UserUpdateSchema(BaseModel):
 class PasswordChangeSchema(BaseModel):
     old_password: str = Field(...)
     new_password: str = Field(..., min_length=6)
+
+class TripSearchSchema(BaseModel):
+    origin_stop_id: str = Field(...)
+    destination_stop_id: str = Field(...)
+    travel_date: date = Field(...)
