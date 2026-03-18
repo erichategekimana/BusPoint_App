@@ -44,3 +44,23 @@ class NearbySearchSchema(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
     radius_km: float = Field(default=2.0, gt=0, le=20)
+
+
+
+class BusCreateSchema(BaseModel):
+    plate_number: str = Field(..., min_length=7, max_length=10, description="Format: RAE 123A")
+    capacity: int = Field(..., gt=0, le=70, description="Seating capacity (max 70)")
+    model_info: str = Field(default="Standard Coach", max_length=50)
+
+
+
+class RouteCreateSchema(BaseModel):
+    name: str = Field(..., min_length=3, max_length=100, description="Example: Kimironko - Nyabugogo")
+
+class RouteStopSchema(BaseModel):
+    stop_id: UUID = Field(...)
+    stop_order: int = Field(..., gt=0, description="The sequence number (1, 2, 3...)")
+    estimated_minutes_from_start: int = Field(..., ge=0, description="Time from the first stop")
+
+
+
