@@ -32,6 +32,15 @@ def validate_payload(schema, payload: dict):
         return None, model_errors(exc.errors())
 
 
+from flask import jsonify
+
+@user_bp.get('/health')
+def health_check():
+    return jsonify({
+        "status": "success",
+        "message": "API is running cleanly"
+    }), 200
+
 @user_bp.post("/auth/register")
 def register():
     payload = request.get_json(silent=True) or {}
