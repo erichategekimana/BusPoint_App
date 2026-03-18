@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from uuid import UUID
 from datetime import date
 
 class UserRegistrationSchema(BaseModel):
@@ -26,3 +27,8 @@ class TripSearchSchema(BaseModel):
     origin_id: str = Field(..., description="UUID of the starting stop")
     dest_id: str = Field(..., description="UUID of the destination stop")
     date: date = Field(..., description="Travel date in YYYY-MM-DD format")
+
+
+class BookingCreateSchema(BaseModel):
+    trip_id: UUID = Field(..., description="The ID of the trip being booked")
+    seat_number: int = Field(..., gt=0, le=60, description="Seat number between 1 and 60")
