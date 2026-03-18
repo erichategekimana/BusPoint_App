@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from datetime import date
 
 class UserRegistrationSchema(BaseModel):
     fullname: str = Field(..., min_length=2, max_lenght=100)
@@ -22,6 +23,6 @@ class PasswordChangeSchema(BaseModel):
     new_password: str = Field(..., min_length=6)
 
 class TripSearchSchema(BaseModel):
-    origin_stop_id: str = Field(...)
-    destination_stop_id: str = Field(...)
-    travel_date: date = Field(...)
+    origin_id: str = Field(..., description="UUID of the starting stop")
+    dest_id: str = Field(..., description="UUID of the destination stop")
+    date: date = Field(..., description="Travel date in YYYY-MM-DD format")
