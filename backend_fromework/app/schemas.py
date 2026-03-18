@@ -32,3 +32,9 @@ class TripSearchSchema(BaseModel):
 class BookingCreateSchema(BaseModel):
     trip_id: UUID = Field(..., description="The ID of the trip being booked")
     seat_number: int = Field(..., gt=0, le=60, description="Seat number between 1 and 60")
+
+
+class StopCreateSchema(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    latitude: float = Field(...)
+    longitude: float = Field(...)
