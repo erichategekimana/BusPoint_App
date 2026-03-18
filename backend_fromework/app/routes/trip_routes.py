@@ -3,8 +3,8 @@ from ..database import db
 from ..models import Trip, User, RouteStop, Stop
 from ..auth import jwt_required, roles_required
 from datetime import datetime, timedelta
-from ..schemas import TripSearchSchema
-from ..utils import validate_query, db_commit_or_rollback
+from ..schemas import TripSearchSchema, TripCreateSchema
+from ..utils import validate_query, db_commit_or_rollback, validate_json
 
 
 # create the blueprint
@@ -75,3 +75,64 @@ def get_trip_details(trip_id):
     ]
     
     return jsonify(data), 200
+
+
+
+@trip_bp.route('/', methods=['POST'])
+@jwt_required
+@roles_required('admin')
+@validate_json(TripCreateSchema)
+@db_commit_or_rollback
+def create_trip(validated_data: TripCreateSchema):
+    """
+    Schedule a new trip. 
+    Checks if the bus is already busy at that time.
+    """
+    # 1. Verify Bus and Route exist
+    from ..models import Bus, Route # Local import to avoid circularity if needed
+    bus = Bus.query.get_or_404(validated_data.bus_id)
+    route = Route.query.get_or_404(validated_data.route_id)
+
+    # 2. Basic Conflict Check: Is this bus already assigned to a trip within 2 hours?
+    buffer_time = timedelta(hours=2)
+    start_window = validated_data.departure_time - buffer_time
+    end_window = validated_data.departure_time + buffer_time
+    
+    conflict = Trip.query.filter(
+        Trip.bus_id == bus.id,
+        Trip.departure_time.between(start_window, end_window)
+    ).first()
+
+    if conflict:
+        return jsonify({
+            "error": "conflict", 
+            "message": f"Bus {bus.plate_number} is already scheduled for a trip near this time."
+        }), 409
+
+    # 3. Create the trip
+    new_trip = Trip(
+        bus_id=validated_data.bus_id,
+        route_id=validated_data.route_id,
+        departure_time=validated_data.departure_time,
+        price=validated_data.price,
+        status='scheduled'
+    )
+    db.session.add(new_trip)
+    return jsonify({"message": "Trip scheduled successfully", "trip": new_trip.to_dict()}), 201
+
+@trip_bp.route('/<uuid:trip_id>/status', methods=['PATCH'])
+@jwt_required
+@roles_required('admin')
+@db_commit_or_rollback
+def update_trip_status(trip_id):
+    """Update trip status (e.g., 'delayed', 'completed', 'cancelled')."""
+    data = request.get_json()
+    new_status = data.get('status')
+    
+    valid_statuses = ['scheduled', 'delayed', 'completed', 'cancelled']
+    if new_status not in valid_statuses:
+        return jsonify({"error": "bad_request", "message": "Invalid status"}), 400
+
+    trip = Trip.query.get_or_404(trip_id)
+    trip.status = new_status
+    return jsonify({"message": f"Trip status updated to {new_status}"}), 200

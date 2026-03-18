@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from uuid import UUID
-from datetime import date
+from datetime import date, datetime
 
 class UserRegistrationSchema(BaseModel):
     fullname: str = Field(..., min_length=2, max_lenght=100)
@@ -27,6 +27,13 @@ class TripSearchSchema(BaseModel):
     origin_id: str = Field(..., description="UUID of the starting stop")
     dest_id: str = Field(..., description="UUID of the destination stop")
     date: date = Field(..., description="Travel date in YYYY-MM-DD format")
+
+
+class TripCreateSchema(BaseModel):
+    bus_id: UUID = Field(...)
+    route_id: UUID = Field(...)
+    departure_time: datetime = Field(..., description="ISO Format: YYYY-MM-DDTHH:MM:SS")
+    price: float = Field(..., gt=0)
 
 
 class BookingCreateSchema(BaseModel):
@@ -61,6 +68,14 @@ class RouteStopSchema(BaseModel):
     stop_id: UUID = Field(...)
     stop_order: int = Field(..., gt=0, description="The sequence number (1, 2, 3...)")
     estimated_minutes_from_start: int = Field(..., ge=0, description="Time from the first stop")
+
+
+
+class BusLocationUpdateSchema(BaseModel):
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+
 
 
 
