@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, g
 from ..database import db
 from ..models import Stop
 from ..auth import jwt_required, roles_required
-from ..schemas import StopCreateSchema
+from ..schemas import StopCreateSchema, NearbySearchSchema
+from sqlalchemy import func
+from ..utils import validate_query, validate_json, db_commit_or_rollback
 from ..utils import validate_json, db_commit_or_rollback
 
 stop_bp = Blueprint('stops', __name__, url_prefix='/api/stops')
@@ -69,3 +71,43 @@ def delete_stop(stop_id):
         
     db.session.delete(stop)
     return jsonify({"message": "Stop deleted successfully"}), 200
+
+
+
+
+@stop_bp.route('/nearby', methods=['GET'])
+@validate_query(NearbySearchSchema)
+def get_nearby_stops(validated_data: NearbySearchSchema):
+    """
+    Finds bus stops within a certain radius of the user's GPS coordinates.
+    Example: /api/stops/nearby?lat=-1.94&lon=30.06&radius_km=1.5
+    """
+    # Earth's radius in kilometers
+    R = 6371.0 
+    
+    user_lat = validated_data.lat
+    user_lon = validated_data.lon
+    radius = validated_data.radius_km
+
+    # Haversine formula in SQLAlchemy
+    # just doing the math inside the database for speed
+    distance_formula = (
+        R * func.acos(
+            func.cos(func.radians(user_lat)) * func.cos(func.radians(Stop.latitude)) * func.cos(func.radians(Stop.longitude) - func.radians(user_lon)) + 
+            func.sin(func.radians(user_lat)) * func.sin(func.radians(Stop.latitude))
+        )
+    )
+
+    # Query stops, calculate distance, filter by radius, and sort by closest
+    nearby_stops = db.session.query(Stop, distance_formula.label('distance'))\
+        .filter(distance_formula <= radius)\
+        .order_by('distance')\
+        .all()
+
+    results = []
+    for stop, dist in nearby_stops:
+        stop_data = stop.to_dict()
+        stop_data['distance_km'] = round(dist, 2)
+        results.append(stop_data)
+
+    return jsonify(results), 200

@@ -38,3 +38,9 @@ class StopCreateSchema(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     latitude: float = Field(...)
     longitude: float = Field(...)
+
+
+class NearbySearchSchema(BaseModel):
+    lat: float = Field(..., ge=-90, le=90)
+    lon: float = Field(..., ge=-180, le=180)
+    radius_km: float = Field(default=2.0, gt=0, le=20)
