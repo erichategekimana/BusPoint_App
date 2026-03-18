@@ -14,6 +14,8 @@ class Trip(db.Model):
     arrival_time = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(20), server_default='scheduled')
     current_capacity = db.Column(db.Integer, nullable=False)
+    current_lat = db.Column(db.Float, nullable=True)  # Updated by driver app
+    current_lon = db.Column(db.Float, nullable=True)  # Updated by driver app
 
     # Relationships
     bus = db.relationship('Bus', back_populates='trips')

@@ -96,6 +96,8 @@ create table if not exists trips
 	arrival_time timestamp with time zone,
 	status varchar(20) default 'scheduled'::character varying,
 	current_capacity integer not null,
+	current_lat numeric(10,8),
+	current_lon numeric(11,8),
 	created_at timestamp with time zone default CURRENT_TIMESTAMP
 );
 
