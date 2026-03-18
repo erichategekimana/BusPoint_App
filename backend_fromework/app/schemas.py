@@ -77,5 +77,12 @@ class BusLocationUpdateSchema(BaseModel):
 
 
 
+class NotificationCreateSchema(BaseModel):
+    user_id: UUID = Field(...)
+    title: str = Field(..., min_length=3, max_length=255)
+    message: str = Field(..., min_length=1)
+    notification_type: str = Field(default="info", description="e.g., info, alert, success")
+
+
 
 
