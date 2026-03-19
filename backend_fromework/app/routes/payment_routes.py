@@ -49,7 +49,7 @@ def initialize_payment(validated_data: PaymentInitializeSchema):
     return jsonify({
         "message": "Payment initiated. Check your phone for the MoMo prompt.",
         "transaction_ref": transaction_ref,
-        "amount": trip.price
+        "amount": trip.route.base_price
     }), 200
 
 @payment_bp.route('/webhook/momo', methods=['POST'])

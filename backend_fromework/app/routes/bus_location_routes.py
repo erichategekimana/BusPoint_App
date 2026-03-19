@@ -12,7 +12,7 @@ loc_bp = Blueprint('locations', __name__, url_prefix='/api/locations')
 @roles_required('driver', 'admin') # Only the driver or admin can move the bus!
 @validate_json(BusLocationUpdateSchema)
 @db_commit_or_rollback
-def update_location(trip_id, validated_data: BusLocationUpdateSchema):
+def update_location(validated_data: BusLocationUpdateSchema, trip_id: str):
     """
     Called by the Driver's app every 10 seconds.
     Updates the current GPS position of the bus for a specific trip.
