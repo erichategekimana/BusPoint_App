@@ -47,7 +47,9 @@ def get_route_details(route_id):
 @db_commit_or_rollback
 def create_route(validated_data: RouteCreateSchema):
     """Creates the 'Header' for a route."""
-    new_route = Route(name=validated_data.name)
+    new_route = Route(
+        route_code=validated_data.route_code,
+        name=validated_data.name)
     db.session.add(new_route)
     db.session.flush() # Get the ID before committing
     return jsonify({"message": "Route created", "route": new_route.to_dict()}), 201
@@ -57,7 +59,7 @@ def create_route(validated_data: RouteCreateSchema):
 @roles_required('admin')
 @validate_json(RouteStopSchema)
 @db_commit_or_rollback
-def add_stop_to_route(route_id, validated_data: RouteStopSchema):
+def add_stop_to_route(validated_data: RouteStopSchema, route_id: str):
     """Adds a specific stop to a route's sequence."""
     route = Route.query.get_or_404(route_id)
     stop = Stop.query.get_or_404(validated_data.stop_id)

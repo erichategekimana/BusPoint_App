@@ -63,6 +63,7 @@ class BusCreateSchema(BaseModel):
 
 
 class RouteCreateSchema(BaseModel):
+    route_code: str = Field(..., min_length=3, max_length=20, description="Unique code like 'KIM-NYA'")
     name: str = Field(..., min_length=3, max_length=100, description="Example: Kimironko - Nyabugogo")
 
 class RouteStopSchema(BaseModel):
