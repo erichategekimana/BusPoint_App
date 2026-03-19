@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, g
 from ..database import db
 from ..models import Trip, User, RouteStop, Stop
+from sqlalchemy.orm import aliased
 from ..auth import jwt_required, roles_required
 from datetime import datetime, timedelta
 from ..schemas import TripSearchSchema, TripCreateSchema
@@ -21,21 +22,23 @@ def search_trips(validated_data: TripSearchSchema):
     origin_id = request.args.get('origin_id')
     dest_id = request.args.get('dest_id')
     date_str = request.args.get('date')
+    OriginRS = aliased(RouteStop)
+    DestRS = aliased(RouteStop)
 
     # 1. Find routes that contain BOTH the origin and destination
     # We use the names from your schema: origin_id and dest_id
-    subquery = db.session.query(RouteStop.route_id)\
-        .join(Stop, RouteStop.stop_id == Stop.id)\
-        .filter(RouteStop.stop_id == validated_data.origin_id)\
-        .intersect(
-            db.session.query(RouteStop.route_id)\
-            .filter(RouteStop.stop_id == validated_data.dest_id)
+    valid_routes = db.session.query(OriginRS.route_id)\
+        .join(DestRS, OriginRS.route_id == DestRS.route_id)\
+        .filter(
+            OriginRS.stop_id == validated_data.origin_id,
+            DestRS.stop_id == validated_data.dest_id,
+            OriginRS.stop_order < DestRS.stop_order # Ensure correct direction
         ).subquery()
 
     # 2. Fetch trips. 
     # validated_data.date is already a Python 'date' object thanks to Pydantic!
     trips = Trip.query.filter(
-        Trip.route_id.in_(subquery),
+        Trip.route_id.in_(valid_routes),
         db.func.date(Trip.departure_time) == validated_data.date,
         Trip.status == 'scheduled'
     ).all()
