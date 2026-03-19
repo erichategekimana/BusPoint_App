@@ -58,7 +58,7 @@ class NearbySearchSchema(BaseModel):
 class BusCreateSchema(BaseModel):
     plate_number: str = Field(..., min_length=7, max_length=10, description="Format: RAE 123A")
     capacity: int = Field(..., gt=0, le=70, description="Seating capacity (max 70)")
-    model_info: str = Field(default="Standard Coach", max_length=50)
+    bus_type: str = Field(default="Standard Coach", max_length=50)
 
 
 

@@ -34,7 +34,7 @@ def create_bus(validated_data: BusCreateSchema):
     new_bus = Bus(
         plate_number=validated_data.plate_number,
         capacity=validated_data.capacity,
-        model_info=validated_data.model_info
+        bus_type=validated_data.bus_type
     )
     db.session.add(new_bus)
     return jsonify({"message": "Bus registered", "bus": new_bus.to_dict()}), 201
