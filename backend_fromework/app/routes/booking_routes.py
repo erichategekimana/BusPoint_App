@@ -22,7 +22,7 @@ def create_booking(validated_data: BookingCreateSchema):
     existing_booking = Booking.query.filter_by(
         trip_id=validated_data.trip_id,
         seat_number=validated_data.seat_number,
-        status='confirmed'
+        status='pending'
     ).first()
     
     if existing_booking:
