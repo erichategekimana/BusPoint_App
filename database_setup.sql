@@ -60,7 +60,7 @@ create table if not exists stops
     is_active boolean default true,
     created_at timestamp with time zone default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone default CURRENT_TIMESTAMP,
-    geom geography(Point,4326)
+    geom geometry(Point,4326)
 );
 
 create index if not exists idx_stops_name
