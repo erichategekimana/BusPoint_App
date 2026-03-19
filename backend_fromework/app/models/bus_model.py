@@ -14,6 +14,10 @@ class Bus(db.Model):
     trips = db.relationship('Trip', back_populates='bus')
 
 
+    # relationships
+    locations = db.relationship('BusLocation', back_populates='bus', uselist=False)  # One-to-One for real-time tracking
+
+
     def to_dict(self):
         return {
             "id": str(self.id), # UUIDs must be strings
