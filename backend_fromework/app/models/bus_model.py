@@ -11,11 +11,13 @@ class Bus(db.Model):
     bus_type = db.Column(db.String(50))
     capacity = db.Column(db.Integer, nullable=False)
     is_active = db.Column(db.Boolean, server_default='True')
-    trips = db.relationship('Trip', back_populates='bus')
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
 
     # relationships
     locations = db.relationship('BusLocation', back_populates='bus', uselist=False)  # One-to-One for real-time tracking
+    trips = db.relationship('Trip', back_populates='bus')
 
 
     def to_dict(self):

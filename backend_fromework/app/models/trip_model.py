@@ -13,6 +13,7 @@ class Trip(db.Model):
     departure_time = db.Column(db.DateTime(timezone=True), nullable=False)
     arrival_time = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(20), server_default='scheduled')
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     current_capacity = db.Column(db.Integer, nullable=False)
     current_lat = db.Column(db.Float, nullable=True)  # Updated by driver app
     current_lon = db.Column(db.Float, nullable=True)  # Updated by driver app
