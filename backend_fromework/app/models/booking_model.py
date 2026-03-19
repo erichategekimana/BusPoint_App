@@ -32,8 +32,8 @@ class Booking(db.Model):
             "trip_id": str(self.trip_id),
             "status": self.status,
             "seat_number": self.seat_number,
-            "pickup_stop": self.pickup_stop.name if self.pickup_stop else None,
-            "dropoff_stop": self.dropoff_stop.name if self.dropoff_stop else None,
+            "pickup_stop": self.pickup_stop.name if self.pickup_stop else "Unknown",
+            "dropoff_stop": self.dropoff_stop.name if self.dropoff_stop else "Unknown",
             "ticket_token": self.ticket_token,
             "boarded_at": self.boarded_at.isoformat() if self.boarded_at else None,
             "created_at": self.created_at.isoformat()

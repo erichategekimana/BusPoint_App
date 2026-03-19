@@ -117,9 +117,9 @@ create table if not exists bookings
 		references trips,
 	seat_number integer,
 	status varchar(20) default 'pending'::character varying,
-	pickup_stop_id uuid
+	pickup_stop_id uuid not null 
 		references stops,
-	dropoff_stop_id uuid
+	dropoff_stop_id uuid not null 
 		references stops,
 	created_at timestamp with time zone default CURRENT_TIMESTAMP,
 	ticket_token varchar(100)
