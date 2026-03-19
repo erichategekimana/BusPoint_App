@@ -77,6 +77,7 @@ def login_user(validated_data: UserLoginSchema):
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required
 def get_current_user():
+    print(f"DEBUG: g.current_user = {g.current_user}") 
 
     # g.current_user is set by the jwt_required decorator after validating the token
     user_identity = g.current_user
