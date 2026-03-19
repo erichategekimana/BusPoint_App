@@ -34,7 +34,7 @@ def initialize_payment(validated_data: PaymentInitializeSchema):
     
     new_payment = Payment(
         booking_id=booking.id,
-        amount=trip.price,
+        amount=trip.route.base_price,  # Use the base price from the route
         currency='RWF',
         payment_method='MTN_MOMO',
         transaction_ref=transaction_ref,

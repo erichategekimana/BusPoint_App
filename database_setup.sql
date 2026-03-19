@@ -182,5 +182,7 @@ create table if not exists bus_locations
 
 
 
+ALTER TABLE routes ADD COLUMN base_price numeric(10,2) default 500.00;
+
 -- store only the "latest" location per bus to avoid overloading the database with unnecessary history.
 ALTER TABLE bus_locations ADD CONSTRAINT unique_bus_id UNIQUE (bus_id);

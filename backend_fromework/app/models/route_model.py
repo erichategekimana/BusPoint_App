@@ -12,7 +12,9 @@ class Route(db.Model):
     is_active = db.Column(db.Boolean, server_default='True')
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    base_price = db.Column(db.Numeric(10, 2), server_default='500.00')
 
+    
     # Relationship
     trips = db.relationship('Trip', back_populates='route')
     route_stops = db.relationship('RouteStop', back_populates='route')
