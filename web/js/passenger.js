@@ -1,5 +1,8 @@
 // Passenger Dashboard Logic
 let busMarkers = [];
+let availableStops = [];
+let availableRouteStops = [];
+let availableBuses = [];
 
 function showPassengerDashboard() {
     const authSection = document.getElementById('auth-section');
@@ -19,7 +22,11 @@ function showPassengerDashboard() {
     // Initialize map if not already done
     if (!window.passengerMap) {
         initPassengerMap();
+    } else {
+        refreshBusLocations();
     }
+
+    loadSearchStops();
     
     // Load user bookings (not available in current backend)
     loadUserBookings();
@@ -43,6 +50,10 @@ function showPassengerSection(section) {
     // Refresh map if on home section
     if (section === 'home') {
         refreshBusLocations();
+    }
+
+    if (section === 'search') {
+        loadSearchStops();
     }
 }
 
@@ -95,8 +106,67 @@ function refreshBusLocations() {
     // Clear existing markers
     busMarkers.forEach(marker => marker.remove());
     busMarkers = [];
-    
-    showNotification('Live bus locations are not available in the current backend.', 'info');
+
+    const summaryContainer = ensureFleetSummaryContainer();
+    if (summaryContainer) {
+        summaryContainer.innerHTML = '<div class="text-center">Loading bus fleet...</div>';
+    }
+
+    api.getBuses()
+        .then(buses => {
+            availableBuses = buses;
+            renderFleetSummary(buses);
+        })
+        .catch(error => {
+            if (summaryContainer) {
+                summaryContainer.innerHTML = `<div class="text-center text-error">Error loading buses: ${error.message}</div>`;
+            }
+        });
+}
+
+function ensureFleetSummaryContainer() {
+    const homeSection = document.getElementById('passenger-home');
+    if (!homeSection) {
+        return null;
+    }
+
+    let container = document.getElementById('fleet-summary');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'fleet-summary';
+        container.className = 'booking-summary';
+        homeSection.appendChild(container);
+    }
+
+    return container;
+}
+
+function renderFleetSummary(buses) {
+    const container = ensureFleetSummaryContainer();
+    if (!container) {
+        return;
+    }
+
+    if (!buses.length) {
+        container.innerHTML = '<div class="text-center">No buses are available in the system.</div>';
+        return;
+    }
+
+    const activeBuses = buses.filter(bus => bus.is_active);
+    const inactiveBuses = buses.length - activeBuses.length;
+    const preview = buses.slice(0, 3).map(bus => `
+        <p>${bus.plate_number} · ${bus.bus_type || 'Bus'} · ${bus.capacity} seats</p>
+    `).join('');
+
+    container.innerHTML = `
+        <div class="booking-details">
+            <h3>Fleet Summary</h3>
+            <p>${activeBuses.length} active buses</p>
+            <p>${inactiveBuses} inactive buses</p>
+            ${preview}
+            <p>Live location markers are unavailable because the current backend does not expose bus coordinates.</p>
+        </div>
+    `;
 }
 
 function addBusMarker(bus) {
@@ -152,32 +222,129 @@ function searchTrips() {
         showNotification('Please fill all fields', 'error');
         return;
     }
+
+    if (from === to) {
+        showNotification('Departure and destination must be different stops', 'error');
+        return;
+    }
     
     // Show loading
     const resultsContainer = document.getElementById('search-results');
     resultsContainer.innerHTML = '<div class="text-center">Loading trips...</div>';
     
-    // Backend does not provide trips; show available routes instead
-    api.getRoutes()
-        .then(routes => {
-            displayRouteResults(routes);
+    Promise.all([
+        api.getRoutes(),
+        availableRouteStops.length ? Promise.resolve(availableRouteStops) : api.getRouteStops()
+    ])
+        .then(([routes, routeStops]) => {
+            availableRouteStops = routeStops;
+            const matchingRoutes = filterRoutesByStops(routes, routeStops, from, to);
+            displayRouteResults(matchingRoutes, from, to, date);
         })
         .catch(error => {
             resultsContainer.innerHTML = `<div class="text-center text-error">Error: ${error.message}</div>`;
         });
 }
 
-function displayRouteResults(routes) {
+function loadSearchStops() {
+    const fromSelect = document.getElementById('fromLocation');
+    const toSelect = document.getElementById('toLocation');
+
+    if (!fromSelect || !toSelect) {
+        return;
+    }
+
+    if (availableStops.length) {
+        populateStopOptions(availableStops);
+        return;
+    }
+
+    fromSelect.innerHTML = '<option value="">Loading departure stops...</option>';
+    toSelect.innerHTML = '<option value="">Loading destination stops...</option>';
+
+    api.getStops()
+        .then(stops => {
+            availableStops = stops.filter(stop => stop.is_active !== false);
+            populateStopOptions(availableStops);
+        })
+        .catch(error => {
+            fromSelect.innerHTML = '<option value="">Unable to load stops</option>';
+            toSelect.innerHTML = '<option value="">Unable to load stops</option>';
+            showNotification(`Unable to load stops: ${error.message}`, 'error');
+        });
+}
+
+function populateStopOptions(stops) {
+    const fromSelect = document.getElementById('fromLocation');
+    const toSelect = document.getElementById('toLocation');
+
+    if (!fromSelect || !toSelect) {
+        return;
+    }
+
+    const currentFrom = fromSelect.value;
+    const currentTo = toSelect.value;
+    const options = ['<option value="">Select stop</option>']
+        .concat(stops.map(stop => `<option value="${stop.id}">${stop.name}</option>`))
+        .join('');
+
+    fromSelect.innerHTML = options;
+    toSelect.innerHTML = options;
+
+    if (stops.some(stop => stop.id === currentFrom)) {
+        fromSelect.value = currentFrom;
+    }
+
+    if (stops.some(stop => stop.id === currentTo)) {
+        toSelect.value = currentTo;
+    }
+}
+
+function filterRoutesByStops(routes, routeStops, fromStopId, toStopId) {
+    return routes.reduce((matches, route) => {
+        const stopsForRoute = routeStops
+            .filter(routeStop => routeStop.route_id === route.id)
+            .sort((a, b) => a.stop_order - b.stop_order);
+        const fromIndex = stopsForRoute.findIndex(routeStop => routeStop.stop_id === fromStopId);
+        const toIndex = stopsForRoute.findIndex(routeStop => routeStop.stop_id === toStopId);
+
+        if (fromIndex === -1 || toIndex === -1 || toIndex <= fromIndex) {
+            return matches;
+        }
+
+        const segment = stopsForRoute.slice(fromIndex, toIndex + 1);
+        const startMinutes = segment[0].estimated_minutes_from_start || 0;
+        const endMinutes = segment[segment.length - 1].estimated_minutes_from_start || 0;
+
+        matches.push({
+            ...route,
+            matched_segment: segment,
+            estimated_minutes: Math.max(endMinutes - startMinutes, 0)
+        });
+
+        return matches;
+    }, []);
+}
+
+function getStopName(stopId) {
+    const stop = availableStops.find(item => item.id === stopId);
+    return stop ? stop.name : 'Unknown stop';
+}
+
+function displayRouteResults(routes, fromStopId, toStopId, date) {
     const resultsContainer = document.getElementById('search-results');
+    const fromStopName = getStopName(fromStopId);
+    const toStopName = getStopName(toStopId);
     
     if (routes.length === 0) {
-        resultsContainer.innerHTML = '<div class="text-center">No routes found</div>';
+        resultsContainer.innerHTML = `<div class="text-center">No routes found from ${fromStopName} to ${toStopName} for ${date}</div>`;
         return;
     }
     
     let html = '<div class="trips-grid">';
     
     routes.forEach(route => {
+        const stopCount = route.matched_segment ? route.matched_segment.length : 0;
         html += `
             <div class="trip-card">
                 <div class="trip-header">
@@ -189,6 +356,18 @@ function displayRouteResults(routes) {
                         <i class="fas fa-route"></i>
                         <span>Route ${route.route_code}</span>
                     </div>
+                    <div class="detail-item">
+                        <i class="fas fa-location-arrow"></i>
+                        <span>${fromStopName} to ${toStopName}</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-map-signs"></i>
+                        <span>${stopCount} stops on this segment</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${route.estimated_minutes} mins for this segment</span>
+                    </div>
                 </div>
                 <div class="trip-actions">
                     <button onclick="showNotification('Booking is not available in the current backend.', 'info')" class="btn-primary">
@@ -198,7 +377,7 @@ function displayRouteResults(routes) {
             </div>
         `;
     });
-    
+
     html += '</div>';
     resultsContainer.innerHTML = html;
 }

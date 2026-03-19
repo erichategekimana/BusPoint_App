@@ -62,6 +62,7 @@ class BusCreateRequest(BaseModel):
     bus_type: str | None = Field(default=None, max_length=50)
     capacity: int = Field(ge=1)
     is_active: bool | None = None
+    managed_by: UUID | None = None
 
 
 class BusUpdateRequest(BaseModel):
@@ -69,6 +70,7 @@ class BusUpdateRequest(BaseModel):
     bus_type: str | None = Field(default=None, max_length=50)
     capacity: int | None = Field(default=None, ge=1)
     is_active: bool | None = None
+    managed_by: UUID | None = None
 
 
 class RouteCreateRequest(BaseModel):

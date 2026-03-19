@@ -5,6 +5,7 @@ from uuid import UUID
 from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
 
+from app.auth import jwt_required, role_required
 from app.database import db
 from app.models import Route, RouteStop, Stop
 from app.schemas import RouteStopCreateRequest, RouteStopUpdateRequest
@@ -64,6 +65,8 @@ def get_route_stop(route_stop_id: str):
 
 
 @route_stop_bp.post("/route-stops")
+@jwt_required()
+@role_required("admin")
 def create_route_stop():
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(RouteStopCreateRequest, payload)
@@ -98,6 +101,8 @@ def create_route_stop():
 
 
 @route_stop_bp.patch("/route-stops/<route_stop_id>")
+@jwt_required()
+@role_required("admin")
 def update_route_stop(route_stop_id: str):
     route_stop_uuid, error = parse_uuid(route_stop_id, "route_stop_id")
     if error:
@@ -147,6 +152,8 @@ def update_route_stop(route_stop_id: str):
 
 
 @route_stop_bp.delete("/route-stops/<route_stop_id>")
+@jwt_required()
+@role_required("admin")
 def delete_route_stop(route_stop_id: str):
     route_stop_uuid, error = parse_uuid(route_stop_id, "route_stop_id")
     if error:

@@ -5,6 +5,7 @@ from uuid import UUID
 from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
 
+from app.auth import jwt_required, role_required
 from app.database import db
 from app.models import Route
 from app.schemas import RouteCreateRequest, RouteUpdateRequest
@@ -59,6 +60,8 @@ def get_route(route_id: str):
 
 
 @route_bp.post("/routes")
+@jwt_required()
+@role_required("admin")
 def create_route():
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(RouteCreateRequest, payload)
@@ -81,6 +84,8 @@ def create_route():
 
 
 @route_bp.patch("/routes/<route_id>")
+@jwt_required()
+@role_required("admin")
 def update_route(route_id: str):
     route_uuid, error = parse_uuid(route_id, "route_id")
     if error:
@@ -110,6 +115,8 @@ def update_route(route_id: str):
 
 
 @route_bp.delete("/routes/<route_id>")
+@jwt_required()
+@role_required("admin")
 def delete_route(route_id: str):
     route_uuid, error = parse_uuid(route_id, "route_id")
     if error:

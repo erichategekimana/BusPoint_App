@@ -5,7 +5,7 @@ from uuid import UUID
 from flask import Blueprint, g, jsonify, request
 from pydantic import ValidationError
 
-from app.auth import create_access_token, hash_password, jwt_required, verify_password
+from app.auth import create_access_token, hash_password, jwt_required, role_required, verify_password
 from app.database import db
 from app.models import User
 from app.schemas import AuthUpdateRequest, LoginRequest, RegisterRequest, UserCreateRequest, UserUpdateRequest
@@ -133,6 +133,8 @@ def update_me():
 
 
 @user_bp.get("/users")
+@jwt_required()
+@role_required("admin")
 def list_users():
     role = request.args.get("role")
     query = User.query
@@ -143,10 +145,14 @@ def list_users():
 
 
 @user_bp.get("/users/<user_id>")
+@jwt_required()
 def get_user(user_id: str):
+    current_user = g.current_user or {}
     user_uuid, error = parse_uuid(user_id, "user_id")
     if error:
         return error
+    if current_user.get("role") != "admin" and current_user.get("user_id") != user_id:
+        return jsonify({"error": "forbidden"}), 403
     user = db.session.get(User, user_uuid)
     if not user:
         return jsonify({"error": "user_not_found"}), 404
@@ -154,6 +160,8 @@ def get_user(user_id: str):
 
 
 @user_bp.post("/users")
+@jwt_required()
+@role_required("admin")
 def create_user():
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(UserCreateRequest, payload)
@@ -178,7 +186,11 @@ def create_user():
 
 
 @user_bp.patch("/users/<user_id>")
+@jwt_required()
 def update_user(user_id: str):
+    current_user = g.current_user or {}
+    if current_user.get("role") != "admin" and current_user.get("user_id") != user_id:
+        return jsonify({"error": "forbidden"}), 403
     user_uuid, error = parse_uuid(user_id, "user_id")
     if error:
         return error
@@ -217,6 +229,8 @@ def update_user(user_id: str):
 
 
 @user_bp.delete("/users/<user_id>")
+@jwt_required()
+@role_required("admin")
 def delete_user(user_id: str):
     user_uuid, error = parse_uuid(user_id, "user_id")
     if error:

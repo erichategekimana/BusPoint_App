@@ -10,6 +10,7 @@ class Trip(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
     bus_id = db.Column(UUID(as_uuid=True), db.ForeignKey('buses.id', ondelete='CASCADE'), nullable=False)
     route_id = db.Column(UUID(as_uuid=True), db.ForeignKey('routes.id', ondelete='CASCADE'), nullable=False)
+    driver_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     departure_time = db.Column(db.DateTime(timezone=True), nullable=False)
     arrival_time = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(20), server_default='scheduled')
@@ -18,6 +19,7 @@ class Trip(db.Model):
     # Relationships
     bus = db.relationship('Bus', back_populates='trips')
     route = db.relationship('Route', back_populates='trips')
+    driver = db.relationship('User', foreign_keys=[driver_id])
     bookings = db.relationship('Booking', back_populates='trip')
     locations = db.relationship('BusLocation', back_populates='trip', lazy=True)
 
@@ -27,6 +29,7 @@ class Trip(db.Model):
             "id": str(self.id),
             "bus_plate": self.bus.plate_number,
             "route_name": self.route.name,
+            "driver_id": str(self.driver_id) if self.driver_id else None,
             "departure_time": self.departure_time.isoformat() if self.departure_time else None,
             "arrival_time": self.arrival_time.isoformat() if self.arrival_time else None,
             "status": self.status,

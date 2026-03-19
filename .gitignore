@@ -41,3 +41,6 @@ android*
 requirements.txt
 README.md
 app/api/tables.py
+
+.mcp.json
+.claude

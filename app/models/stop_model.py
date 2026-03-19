@@ -8,7 +8,7 @@ class Stop(db.Model):
     __tablename__ = 'stops'
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), unique=True, nullable=False)
     latitude = db.Column(db.Numeric(10, 8), nullable=False)
     longitude = db.Column(db.Numeric(11, 8), nullable=False)
     is_active = db.Column(db.Boolean, server_default='true')    

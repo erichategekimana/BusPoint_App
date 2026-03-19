@@ -20,23 +20,15 @@ class APIService {
         }
 
         try {
-            console.log('Making API request to:', url);
-            console.log('Request config:', config);
-            
             const response = await fetch(url, config);
-            
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-            
-            // Check if response is JSON
+
             const contentType = response.headers.get('content-type');
             let data;
-            
+
             if (contentType && contentType.includes('application/json')) {
                 data = await response.json();
             } else {
                 const text = await response.text();
-                console.log('Non-JSON response:', text);
                 throw new Error(`Server returned non-JSON response: ${text}`);
             }
 
@@ -45,26 +37,17 @@ class APIService {
                 throw new Error(message);
             }
 
-            console.log('API response data:', data);
             return data;
         } catch (error) {
-            console.error('API Error:', error);
-            
-            // Handle network errors
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                throw new Error('Network error: Unable to connect to server. Please check your internet connection.');
+                throw new Error('Network error: Unable to connect to server.');
             }
-            
-            // Handle CORS errors
-            if (error.message.includes('CORS')) {
-                throw new Error('CORS error: Server is not configured to accept requests from this domain.');
-            }
-            
             throw error;
         }
     }
 
-    // Authentication
+    // ── Authentication ──────────────────────────────────────────────────────
+
     async login(credentials) {
         return this.request('/auth/login', {
             method: 'POST',
@@ -79,82 +62,160 @@ class APIService {
         });
     }
 
-    // Routes
-    async getRoutes() {
-        return this.request('/routes');
+    // ── Routes ──────────────────────────────────────────────────────────────
+
+    async getRoutes(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/routes${qs ? `?${qs}` : ''}`);
     }
 
     async getRoute(id) {
         return this.request(`/routes/${id}`);
     }
 
-    // Stops
-    async getStops() {
-        return this.request('/stops');
+    // ── Stops ───────────────────────────────────────────────────────────────
+
+    async getStops(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/stops${qs ? `?${qs}` : ''}`);
     }
 
-    // Buses
-    async getBuses() {
-        return this.request('/buses');
+    // ── Buses ───────────────────────────────────────────────────────────────
+
+    async getBuses(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/buses${qs ? `?${qs}` : ''}`);
     }
 
-    // Route Stops
+    // ── Route Stops ─────────────────────────────────────────────────────────
+
     async getRouteStops(params = {}) {
-        const queryString = new URLSearchParams(params).toString();
-        return this.request(`/route-stops${queryString ? `?${queryString}` : ''}`);
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/route-stops${qs ? `?${qs}` : ''}`);
     }
 
-    // Unsupported endpoints in current backend
-    async getTrips() {
-        throw new Error('Trips endpoint is not available on the current backend.');
+    // ── Trips ───────────────────────────────────────────────────────────────
+
+    async getTrips(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/trips${qs ? `?${qs}` : ''}`);
     }
 
-    async getDriverTrips() {
-        throw new Error('Driver trips endpoint is not available on the current backend.');
+    async getTrip(id) {
+        return this.request(`/trips/${id}`);
     }
 
-    async updateTripStatus() {
-        throw new Error('Trip status update endpoint is not available on the current backend.');
+    async createTrip(data) {
+        return this.request('/trips', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
     }
 
-    async createBooking() {
-        throw new Error('Booking endpoint is not available on the current backend.');
+    async updateTrip(id, data) {
+        return this.request(`/trips/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async deleteTrip(id) {
+        return this.request(`/trips/${id}`, { method: 'DELETE' });
+    }
+
+    // ── Bookings ─────────────────────────────────────────────────────────────
+
+    async getBookings(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/bookings${qs ? `?${qs}` : ''}`);
+    }
+
+    async createBooking(data) {
+        return this.request('/bookings', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
     }
 
     async getUserBookings() {
-        throw new Error('Bookings endpoint is not available on the current backend.');
+        return this.getBookings();
     }
 
-    async getTripManifest() {
-        throw new Error('Trip manifest endpoint is not available on the current backend.');
+    // ── Payments ─────────────────────────────────────────────────────────────
+
+    async initiatePayment(data) {
+        return this.request('/payments', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async verifyPayment(id) {
+        return this.request(`/payments/${id}`);
+    }
+
+    async createBus(data) {
+        return this.request('/buses', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    async updateBus(id, data) {
+        return this.request(`/buses/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+
+    async deleteBus(id) {
+        return this.request(`/buses/${id}`, { method: 'DELETE' });
+    }
+
+    // ── Bus Locations ─────────────────────────────────────────────────────────
+
+    async getBusLocations(params = {}) {
+        const qs = new URLSearchParams(params).toString();
+        return this.request(`/bus-locations${qs ? `?${qs}` : ''}`);
+    }
+
+    async createBusLocation(data) {
+        return this.request('/bus-locations', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async updateBusLocation(id, data) {
+        return this.request(`/bus-locations/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+
+    async getUserNotifications() {
+        return this.request('/notifications');
+    }
+
+    async markNotificationRead(id) {
+        return this.request(`/notifications/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ is_ready: true })
+        });
+    }
+
+    // ── Manifests / legacy stubs ──────────────────────────────────────────────
+
+    async getTripManifest(tripId) {
+        return this.getBookings({ trip_id: tripId });
     }
 
     async verifyTicket() {
-        throw new Error('Ticket verification endpoint is not available on the current backend.');
+        throw new Error('Ticket verification is not yet implemented.');
     }
 
-    async initiatePayment() {
-        throw new Error('Payments endpoint is not available on the current backend.');
+    async updateTripStatus(tripId, status) {
+        return this.updateTrip(tripId, { status });
     }
 
-    async verifyPayment() {
-        throw new Error('Payments endpoint is not available on the current backend.');
-    }
-
-    async updateBusLocation() {
-        throw new Error('Bus location endpoint is not available on the current backend.');
-    }
-
-    async getBusLocation() {
-        throw new Error('Bus location endpoint is not available on the current backend.');
-    }
-
-    async getUserNotifications() {
-        throw new Error('Notifications endpoint is not available on the current backend.');
-    }
-
-    async markNotificationRead() {
-        throw new Error('Notifications endpoint is not available on the current backend.');
+    async getDriverTrips(driverId) {
+        return this.getTrips({ driver_id: driverId });
     }
 }
 

@@ -238,9 +238,9 @@
                     <i class="fas fa-route"></i>
                     <span>Today's Trips</span>
                 </a>
-                <a href="#" onclick="showDriverSection('manifest')" class="nav-item">
-                    <i class="fas fa-users"></i>
-                    <span>Passengers</span>
+                <a href="#" onclick="showDriverSection('buses')" class="nav-item">
+                    <i class="fas fa-bus"></i>
+                    <span>Buses</span>
                 </a>
                 <a href="#" onclick="showDriverSection('scanner')" class="nav-item">
                     <i class="fas fa-qrcode"></i>
@@ -266,25 +266,26 @@
             <div class="section-header">
                 <h2>Today's Trips</h2>
                 <p>Manage your assigned trips</p>
+                <button onclick="openTripModal()" class="btn-primary" style="margin-top:12px">
+                    <i class="fas fa-plus"></i> Add Trip
+                </button>
             </div>
             <div id="trips-list" class="trips-list">
                 <!-- Trips will be populated here -->
             </div>
         </div>
 
-        <!-- Driver Manifest Section -->
-        <div id="driver-manifest" class="section">
+        <!-- Driver Buses Section -->
+        <div id="driver-buses" class="section">
             <div class="section-header">
-                <h2>Passenger Manifest</h2>
-                <p>View passengers for selected trip</p>
+                <h2>My Buses</h2>
+                <p>Buses assigned to you</p>
+                <button onclick="openBusModal()" class="btn-primary" style="margin-top:12px">
+                    <i class="fas fa-plus"></i> Add Bus
+                </button>
             </div>
-            <div class="manifest-controls">
-                <select id="tripSelect" onchange="loadManifest()">
-                    <option value="">Select a trip</option>
-                </select>
-            </div>
-            <div id="manifest-list" class="manifest-list">
-                <!-- Manifest will be populated here -->
+            <div id="buses-list" class="trips-list">
+                <!-- Buses will be populated here -->
             </div>
         </div>
 
@@ -321,8 +322,31 @@
         <div id="driver-gps" class="section">
             <div class="section-header">
                 <h2>GPS Tracking</h2>
-                <p>Broadcast your location to passengers</p>
+                <p>Broadcast your location and see all buses on the map</p>
             </div>
+
+            <!-- Active trip selector -->
+            <div class="gps-trip-bar">
+                <label for="gps-trip-select"><i class="fas fa-route"></i> Active Trip:</label>
+                <select id="gps-trip-select">
+                    <option value="">— Select your current trip —</option>
+                </select>
+            </div>
+
+            <!-- Live map -->
+            <div class="map-container" style="margin-bottom:16px">
+                <div id="driver-map" class="map"></div>
+                <div class="map-controls">
+                    <button onclick="centerDriverMap()" class="map-btn" title="Center map">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                    <button onclick="refreshDriverBusMarkers()" class="map-btn" title="Refresh bus locations">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status + controls -->
             <div class="gps-container">
                 <div class="gps-status">
                     <div class="status-card">
@@ -365,6 +389,100 @@
         </div>
     </div>
 
+    <!-- Driver Trip Modal (Add / Edit) -->
+    <div id="driver-trip-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="driver-trip-modal-title">Add Trip</h3>
+                <button onclick="closeTripModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="driver-trip-form">
+                    <div class="form-group">
+                        <label>Bus <span style="color:#FF3B30">*</span></label>
+                        <select id="trip-form-bus" required>
+                            <option value="">Select bus</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Route <span style="color:#FF3B30">*</span></label>
+                        <select id="trip-form-route" required>
+                            <option value="">Select route</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Time <span style="color:#FF3B30">*</span></label>
+                        <input type="datetime-local" id="trip-form-departure" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Arrival Time <small>(optional)</small></label>
+                        <input type="datetime-local" id="trip-form-arrival">
+                    </div>
+                    <div class="form-group">
+                        <label>Available Seats <span style="color:#FF3B30">*</span></label>
+                        <input type="number" id="trip-form-capacity" min="1" placeholder="e.g. 30" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="trip-form-status">
+                            <option value="scheduled">Scheduled</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="trip-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
+                        <i class="fas fa-save"></i> Save Trip
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Bus Modal (Add / Edit) -->
+    <div id="driver-bus-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="driver-bus-modal-title">Add Bus</h3>
+                <button onclick="closeBusModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="driver-bus-form">
+                    <div class="form-group">
+                        <label>Plate Number <span style="color:#FF3B30">*</span></label>
+                        <input type="text" id="bus-form-plate" placeholder="e.g. RAB 123A" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bus Type</label>
+                        <input type="text" id="bus-form-type" placeholder="e.g. Coaster, Mini-bus">
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity <span style="color:#FF3B30">*</span></label>
+                        <input type="number" id="bus-form-capacity" min="1" placeholder="e.g. 30" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Make / Model</label>
+                        <input type="text" id="bus-form-make-model" placeholder="e.g. Toyota Coaster">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="bus-form-status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="bus-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
+                        <i class="fas fa-save"></i> Save Bus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modals -->
     <div id="booking-modal" class="modal">
         <div class="modal-content">
@@ -380,7 +498,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/mock-api.js"></script>

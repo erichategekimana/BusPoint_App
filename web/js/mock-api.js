@@ -3,6 +3,24 @@ class MockAPIService {
     constructor() {
         this.users = JSON.parse(localStorage.getItem('mock_users') || '[]');
         this.nextUserId = this.users.length + 1;
+        this.stops = [
+            { id: 'stop-kgl', name: 'Kigali', latitude: -1.9403, longitude: 30.0619, is_active: true },
+            { id: 'stop-msz', name: 'Musanze', latitude: -1.4996, longitude: 29.6349, is_active: true },
+            { id: 'stop-huy', name: 'Huye', latitude: -2.5967, longitude: 29.7394, is_active: true }
+        ];
+        this.buses = [
+            { id: 'bus-1', plate_number: 'RAB123A', bus_type: 'Coaster', capacity: 30, is_active: true },
+            { id: 'bus-2', plate_number: 'RAC456B', bus_type: 'City Bus', capacity: 45, is_active: true },
+            { id: 'bus-3', plate_number: 'RAD789C', bus_type: 'Mini Bus', capacity: 18, is_active: false }
+        ];
+        this.routeStops = [
+            { id: 'rs-1', route_id: 1, stop_id: 'stop-kgl', stop_order: 1, estimated_minutes_from_start: 0 },
+            { id: 'rs-2', route_id: 1, stop_id: 'stop-msz', stop_order: 2, estimated_minutes_from_start: 120 },
+            { id: 'rs-3', route_id: 2, stop_id: 'stop-kgl', stop_order: 1, estimated_minutes_from_start: 0 },
+            { id: 'rs-4', route_id: 2, stop_id: 'stop-huy', stop_order: 2, estimated_minutes_from_start: 150 },
+            { id: 'rs-5', route_id: 3, stop_id: 'stop-msz', stop_order: 1, estimated_minutes_from_start: 0 },
+            { id: 'rs-6', route_id: 3, stop_id: 'stop-kgl', stop_order: 2, estimated_minutes_from_start: 120 }
+        ];
     }
 
     async delay(ms = 1000) {
@@ -74,6 +92,29 @@ class MockAPIService {
             { id: 2, route_code: 'KGL-HUY', name: 'Kigali to Huye' },
             { id: 3, route_code: 'MSZ-KGL', name: 'Musanze to Kigali' }
         ];
+    }
+
+    async getStops() {
+        await this.delay(300);
+        return this.stops;
+    }
+
+    async getBuses() {
+        await this.delay(300);
+        return this.buses;
+    }
+
+    async getRouteStops(params = {}) {
+        await this.delay(300);
+        return this.routeStops.filter(routeStop => {
+            if (params.route_id && String(routeStop.route_id) !== String(params.route_id)) {
+                return false;
+            }
+            if (params.stop_id && String(routeStop.stop_id) !== String(params.stop_id)) {
+                return false;
+            }
+            return true;
+        });
     }
 
     async getTrips(params = {}) {
@@ -236,6 +277,19 @@ class MockAPIService {
             if (segments[0] === 'routes') {
                 if (segments.length === 1) return this.getRoutes();
                 return this.getRoute(parseInt(segments[1]));
+            }
+
+            if (segments[0] === 'stops') {
+                return this.getStops();
+            }
+
+            if (segments[0] === 'buses') {
+                return this.getBuses();
+            }
+
+            if (segments[0] === 'route-stops') {
+                const params = Object.fromEntries(new URLSearchParams(query || ''));
+                return this.getRouteStops(params);
             }
             
             if (segments[0] === 'trips') {

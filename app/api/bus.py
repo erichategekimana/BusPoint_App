@@ -3,11 +3,12 @@ from __future__ import annotations
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
+from app.auth import jwt_required, role_required
 from app.database import db
-from app.models import Bus
-from app.schemas import BusCreateRequest, BusUpdateRequest
+from app.models import Bus, User
+from app.schemas import BusCreateRequest , BusUpdateRequest 
 
 
 bus_bp = Blueprint("bus_api", __name__, url_prefix="/api")
@@ -37,6 +38,8 @@ def parse_bool(raw: str | None) -> bool | None:
     return raw.strip().lower() in {"1", "true", "yes"}
 
 
+# ── READ endpoints — open to everyone ──────────────────────────────────────
+
 @bus_bp.get("/buses")
 def list_buses():
     is_active = parse_bool(request.args.get("is_active"))
@@ -59,6 +62,8 @@ def get_bus(bus_id: str):
 
 
 @bus_bp.post("/buses")
+@jwt_required()
+@role_required("driver")
 def create_bus():
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(BusCreateRequest, payload)
@@ -68,6 +73,9 @@ def create_bus():
     if Bus.query.filter_by(plate_number=validated.plate_number).first():
         return jsonify({"error": "plate_number_already_exists"}), 409
 
+    if validated.managed_by and not db.session.get(User, validated.managed_by):
+        return jsonify({"error": "manager_user_not_found"}), 404
+
     bus = Bus(
         plate_number=validated.plate_number.strip(),
         bus_type=validated.bus_type,
@@ -75,6 +83,8 @@ def create_bus():
     )
     if validated.is_active is not None:
         bus.is_active = validated.is_active
+    if validated.managed_by is not None:
+        bus.managed_by = validated.managed_by
 
     db.session.add(bus)
     db.session.commit()
@@ -82,6 +92,8 @@ def create_bus():
 
 
 @bus_bp.patch("/buses/<bus_id>")
+@jwt_required()
+@role_required("admin")
 def update_bus(bus_id: str):
     bus_uuid, error = parse_uuid(bus_id, "bus_id")
     if error:
@@ -101,6 +113,10 @@ def update_bus(bus_id: str):
             return jsonify({"error": "plate_number_already_exists"}), 409
         bus.plate_number = validated.plate_number.strip()
 
+    if validated.managed_by is not None:
+        if not db.session.get(User, validated.managed_by):
+            return jsonify({"error": "manager_user_not_found"}), 404
+        bus.managed_by = validated.managed_by
     if validated.bus_type is not None:
         bus.bus_type = validated.bus_type
     if validated.capacity is not None:
@@ -113,6 +129,8 @@ def update_bus(bus_id: str):
 
 
 @bus_bp.delete("/buses/<bus_id>")
+@jwt_required()
+@role_required("admin")
 def delete_bus(bus_id: str):
     bus_uuid, error = parse_uuid(bus_id, "bus_id")
     if error:

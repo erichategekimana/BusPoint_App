@@ -1,0 +1,182 @@
+from __future__ import annotations
+
+import secrets
+from datetime import datetime
+from uuid import UUID
+
+from flask import Blueprint, g, jsonify, request
+from pydantic import BaseModel, Field, ValidationError
+
+from app.auth import jwt_required, role_required
+from app.database import db
+from app.models import Booking, Stop, Trip, User
+
+
+booking_bp = Blueprint("booking_api", __name__, url_prefix="/api")
+
+
+class BookingCreateRequest(BaseModel):
+    trip_id: UUID
+    pickup_stop_id: UUID
+    dropoff_stop_id: UUID
+    seat_number: int | None = Field(default=None, ge=1)
+    # user_id only respected when sent by an admin; passengers use token identity
+    user_id: UUID | None = None
+
+
+class BookingUpdateRequest(BaseModel):
+    status: str | None = None
+    seat_number: int | None = Field(default=None, ge=1)
+    boarded_at: str | None = None
+
+
+def parse_uuid(raw_value: str, field_name: str):
+    try:
+        return UUID(raw_value), None
+    except ValueError:
+        return None, (jsonify({"error": f"invalid_{field_name}"}), 400)
+
+
+def model_errors(errors: list[dict]) -> tuple:
+    return jsonify({"error": "validation_error", "details": errors}), 400
+
+
+def validate_payload(schema, payload: dict):
+    try:
+        return schema.model_validate(payload), None
+    except ValidationError as exc:
+        return None, model_errors(exc.errors())
+
+
+# ── READ endpoints ──────────────────────────────────────────────────────────
+# Admin sees all; passengers see only their own bookings.
+
+@booking_bp.get("/bookings")
+@jwt_required()
+def list_bookings():
+    current_user = g.current_user or {}
+    role = current_user.get("role")
+    trip_id = request.args.get("trip_id")
+    status = request.args.get("status")
+
+    query = Booking.query
+
+    if role == "admin":
+        user_id_filter = request.args.get("user_id")
+        if user_id_filter:
+            user_uuid, error = parse_uuid(user_id_filter, "user_id")
+            if error:
+                return error
+            query = query.filter(Booking.user_id == user_uuid)
+    else:
+        own_uuid = UUID(current_user.get("user_id"))
+        query = query.filter(Booking.user_id == own_uuid)
+
+    if trip_id:
+        trip_uuid, error = parse_uuid(trip_id, "trip_id")
+        if error:
+            return error
+        query = query.filter(Booking.trip_id == trip_uuid)
+    if status:
+        query = query.filter(Booking.status == status)
+
+    bookings = query.order_by(Booking.created_at.desc()).all()
+    return jsonify([booking.to_dict() for booking in bookings]), 200
+
+
+@booking_bp.get("/bookings/<booking_id>")
+@jwt_required()
+def get_booking(booking_id: str):
+    current_user = g.current_user or {}
+    booking_uuid, error = parse_uuid(booking_id, "booking_id")
+    if error:
+        return error
+    booking = db.session.get(Booking, booking_uuid)
+    if not booking:
+        return jsonify({"error": "booking_not_found"}), 404
+    if current_user.get("role") != "admin" and str(booking.user_id) != current_user.get("user_id"):
+        return jsonify({"error": "forbidden"}), 403
+    return jsonify(booking.to_dict()), 200
+
+
+# ── WRITE endpoints ─────────────────────────────────────────────────────────
+
+@booking_bp.post("/bookings")
+@jwt_required()
+def create_booking():
+    current_user = g.current_user or {}
+    role = current_user.get("role")
+
+    payload = request.get_json(silent=True) or {}
+    validated, error = validate_payload(BookingCreateRequest, payload)
+    if error:
+        return error
+
+    # Resolve the user_id: admin may specify one; everyone else books for themselves
+    if role == "admin" and validated.user_id:
+        target_user_id = validated.user_id
+    else:
+        target_user_id = UUID(current_user.get("user_id"))
+
+    if not db.session.get(User, target_user_id):
+        return jsonify({"error": "user_not_found"}), 404
+    if not db.session.get(Trip, validated.trip_id):
+        return jsonify({"error": "trip_not_found"}), 404
+    if not db.session.get(Stop, validated.pickup_stop_id):
+        return jsonify({"error": "pickup_stop_not_found"}), 404
+    if not db.session.get(Stop, validated.dropoff_stop_id):
+        return jsonify({"error": "dropoff_stop_not_found"}), 404
+
+    booking = Booking(
+        user_id=target_user_id,
+        trip_id=validated.trip_id,
+        pickup_stop_id=validated.pickup_stop_id,
+        dropoff_stop_id=validated.dropoff_stop_id,
+        seat_number=validated.seat_number,
+        ticket_token=secrets.token_urlsafe(32),
+    )
+    db.session.add(booking)
+    db.session.commit()
+    return jsonify(booking.to_dict()), 201
+
+
+@booking_bp.patch("/bookings/<booking_id>")
+@jwt_required()
+@role_required("admin")
+def update_booking(booking_id: str):
+    booking_uuid, error = parse_uuid(booking_id, "booking_id")
+    if error:
+        return error
+    booking = db.session.get(Booking, booking_uuid)
+    if not booking:
+        return jsonify({"error": "booking_not_found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    validated, error = validate_payload(BookingUpdateRequest, payload)
+    if error:
+        return error
+
+    if validated.status is not None:
+        booking.status = validated.status
+    if validated.seat_number is not None:
+        booking.seat_number = validated.seat_number
+    if validated.boarded_at is not None:
+        booking.boarded_at = datetime.fromisoformat(validated.boarded_at)
+
+    db.session.commit()
+    return jsonify(booking.to_dict()), 200
+
+
+@booking_bp.delete("/bookings/<booking_id>")
+@jwt_required()
+@role_required("admin")
+def delete_booking(booking_id: str):
+    booking_uuid, error = parse_uuid(booking_id, "booking_id")
+    if error:
+        return error
+    booking = db.session.get(Booking, booking_uuid)
+    if not booking:
+        return jsonify({"error": "booking_not_found"}), 404
+    db.session.delete(booking)
+    db.session.commit()
+    return jsonify({"status": "deleted"}), 200

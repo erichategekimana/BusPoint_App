@@ -58,3 +58,16 @@ def jwt_required():
             return fn(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def role_required(*roles):
+    """Must be stacked below @jwt_required() so g.current_user is already set."""
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            current_user = g.get("current_user") or {}
+            if current_user.get("role") not in roles:
+                return jsonify({"error": "forbidden"}), 403
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
