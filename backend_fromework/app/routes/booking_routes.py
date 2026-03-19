@@ -36,7 +36,7 @@ def create_booking(validated_data: BookingCreateSchema):
         seat_number=validated_data.seat_number,
         pickup_stop_id=validated_data.pickup_stop_id,
         dropoff_stop_id=validated_data.dropoff_stop_id,
-        status='confirmed',
+        status='pending',
         ticket_token=secrets.token_hex(8).upper()
     )
     
