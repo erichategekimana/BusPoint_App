@@ -85,4 +85,14 @@ class NotificationCreateSchema(BaseModel):
 
 
 
+class PaymentInitializeSchema(BaseModel):
+    booking_id: UUID = Field(...)
+    phone_number: str = Field(..., min_length=10, description="The MoMo number to be charged")
+
+
+
+
+
+
+
 
