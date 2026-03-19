@@ -39,7 +39,8 @@ class TripCreateSchema(BaseModel):
 class BookingCreateSchema(BaseModel):
     trip_id: UUID = Field(..., description="The ID of the trip being booked")
     seat_number: int = Field(..., gt=0, le=60, description="Seat number between 1 and 60")
-
+    pickup_stop_id: UUID = Field(..., description="The stop where the passenger will board")
+    dropoff_stop_id: UUID = Field(..., description="The stop where the passenger will alight")
 
 class StopCreateSchema(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
