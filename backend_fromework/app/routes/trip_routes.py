@@ -19,11 +19,17 @@ def search_trips(validated_data: TripSearchSchema):
     Search for trips based on origin, destination, and date.
     The validated_data object now contains clean, typed data.
     """
+
+    # ----- future use maybe-----
     origin_id = request.args.get('origin_id')
     dest_id = request.args.get('dest_id')
     date_str = request.args.get('date')
+    #-----------------------
+
+
     OriginRS = aliased(RouteStop)
     DestRS = aliased(RouteStop)
+
 
     # 1. Find routes that contain BOTH the origin and destination
     # We use the names from your schema: origin_id and dest_id
