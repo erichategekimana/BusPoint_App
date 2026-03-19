@@ -106,67 +106,6 @@ function refreshBusLocations() {
     // Clear existing markers
     busMarkers.forEach(marker => marker.remove());
     busMarkers = [];
-
-    const summaryContainer = ensureFleetSummaryContainer();
-    if (summaryContainer) {
-        summaryContainer.innerHTML = '<div class="text-center">Loading bus fleet...</div>';
-    }
-
-    api.getBuses()
-        .then(buses => {
-            availableBuses = buses;
-            renderFleetSummary(buses);
-        })
-        .catch(error => {
-            if (summaryContainer) {
-                summaryContainer.innerHTML = `<div class="text-center text-error">Error loading buses: ${error.message}</div>`;
-            }
-        });
-}
-
-function ensureFleetSummaryContainer() {
-    const homeSection = document.getElementById('passenger-home');
-    if (!homeSection) {
-        return null;
-    }
-
-    let container = document.getElementById('fleet-summary');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'fleet-summary';
-        container.className = 'booking-summary';
-        homeSection.appendChild(container);
-    }
-
-    return container;
-}
-
-function renderFleetSummary(buses) {
-    const container = ensureFleetSummaryContainer();
-    if (!container) {
-        return;
-    }
-
-    if (!buses.length) {
-        container.innerHTML = '<div class="text-center">No buses are available in the system.</div>';
-        return;
-    }
-
-    const activeBuses = buses.filter(bus => bus.is_active);
-    const inactiveBuses = buses.length - activeBuses.length;
-    const preview = buses.slice(0, 3).map(bus => `
-        <p>${bus.plate_number} · ${bus.bus_type || 'Bus'} · ${bus.capacity} seats</p>
-    `).join('');
-
-    container.innerHTML = `
-        <div class="booking-details">
-            <h3>Fleet Summary</h3>
-            <p>${activeBuses.length} active buses</p>
-            <p>${inactiveBuses} inactive buses</p>
-            ${preview}
-            <p>Live location markers are unavailable because the current backend does not expose bus coordinates.</p>
-        </div>
-    `;
 }
 
 function addBusMarker(bus) {
