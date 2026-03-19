@@ -30,7 +30,7 @@ def register_user(validated_data: UserRegistrationSchema):
 
     # create new user
     new_user = User(
-        fullname=validated_data.fullname,
+        full_name=validated_data.fullname,
         phone_number=validated_data.phone_number,
         email=validated_data.email,
         password_hash=hashed_pw
