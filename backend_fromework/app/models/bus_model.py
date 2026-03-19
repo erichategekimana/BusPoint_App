@@ -17,7 +17,7 @@ class Bus(db.Model):
 
     # relationships
     locations = db.relationship('BusLocation', back_populates='bus', uselist=False)  # One-to-One for real-time tracking
-    trips = db.relationship('Trip', back_populates='bus')
+    trips = db.relationship('Trip', back_populates='bus', lazy=True)
 
 
     def to_dict(self):

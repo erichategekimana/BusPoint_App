@@ -26,6 +26,12 @@ def create_app():
     from app.routes.auth_routes import auth_bp
     from app.routes.trip_routes import trip_bp
     from app.routes.booking_routes import booking_bp
+    from app.routes.bus_routes import bus_bp
+    from app.routes.bus_location_routes import loc_bp
+    from app.routes.route_routes import route_bp
+    from app.routes.notification_routes import notification_bp
+    from app.routes.payment_routes import payment_bp
+    from app.routes.stop_routes import stop_bp 
 #    >
 #    >
 #    >
@@ -37,6 +43,12 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(trip_bp, url_prefix='/api/trips')
     app.register_blueprint(booking_bp, url_prefix='/api/bookings')
+    app.register_blueprint(bus_bp, url_prefix='/api/buses')
+    app.register_blueprint(loc_bp, url_prefix='/api/locations')
+    app.register_blueprint(route_bp, url_prefix='/api/routes')
+    app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+    app.register_blueprint(payment_bp, url_prefix='/api/payments')
+    app.register_blueprint(stop_bp, url_prefix='/api/stops')
 #    >
 #    >
 #    >

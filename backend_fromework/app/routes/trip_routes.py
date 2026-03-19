@@ -23,7 +23,7 @@ def search_trips(validated_data: TripSearchSchema):
     # ----- future use maybe-----
     origin_id = request.args.get('origin_id')
     dest_id = request.args.get('dest_id')
-    date_str = request.args.get('date')
+    date_str = request.args.get('travel_date')
     #-----------------------
 
 
@@ -45,7 +45,7 @@ def search_trips(validated_data: TripSearchSchema):
     # validated_data.date is already a Python 'date' object thanks to Pydantic!
     trips = Trip.query.filter(
         Trip.route_id.in_(valid_routes),
-        db.func.date(Trip.departure_time) == validated_data.date,
+        db.func.date(Trip.departure_time) == validated_data.travel_date,
         Trip.status == 'scheduled'
     ).all()
 

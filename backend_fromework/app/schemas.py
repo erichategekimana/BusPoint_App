@@ -26,7 +26,7 @@ class PasswordChangeSchema(BaseModel):
 class TripSearchSchema(BaseModel):
     origin_id: str = Field(..., description="UUID of the starting stop")
     dest_id: str = Field(..., description="UUID of the destination stop")
-    date: date = Field(..., description="Travel date in YYYY-MM-DD format")
+    travel_date: date = Field(..., description="Travel date in YYYY-MM-DD format")
 
 
 class TripCreateSchema(BaseModel):

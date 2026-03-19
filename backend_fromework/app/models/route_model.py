@@ -18,3 +18,14 @@ class Route(db.Model):
     # Relationship
     trips = db.relationship('Trip', back_populates='route')
     route_stops = db.relationship('RouteStop', back_populates='route')
+
+    def to_dict(self):
+        return {
+        "id": str(self.id),
+        "route_code": self.route_code,
+        "name": self.name,
+        "is_active": self.is_active,
+        "base_price": float(self.base_price) if self.base_price else None,
+        "created_at": self.created_at.isoformat() if self.created_at else None,
+        "updated_at": self.updated_at.isoformat() if self.updated_at else None
+    }

@@ -18,5 +18,5 @@ class BusLocation(db.Model):
     captured_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     # Relationship back to Bus
-    bus = db.relationship('Bus', back_populates='location', uselist=False)
+    bus = db.relationship('Bus', back_populates='locations', uselist=False)
     trip = db.relationship('Trip', back_populates='locations', lazy=True)
