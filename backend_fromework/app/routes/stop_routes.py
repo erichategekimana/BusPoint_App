@@ -44,7 +44,7 @@ def create_stop(validated_data: StopCreateSchema):
 @roles_required('admin')
 @validate_json(StopCreateSchema)
 @db_commit_or_rollback
-def update_stop(stop_id, validated_data: StopCreateSchema):
+def update_stop(validated_data: StopCreateSchema, stop_id: str):
     """Update an existing stop's name or coordinates."""
     stop = Stop.query.get_or_404(stop_id)
     
