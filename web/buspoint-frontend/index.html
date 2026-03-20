@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusPoint - Smart Bus Booking & Tracking</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/passenger.css">
+    <link rel="stylesheet" href="css/driver.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loader">
+            <div class="bus-icon">
+                <i class="fas fa-bus"></i>
+            </div>
+            <div class="loading-text">BusPoint</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Container -->
+    <div id="auth-container" class="auth-container hidden">
+        <div class="auth-card">
+            <div class="auth-logo">
+                <i class="fas fa-bus"></i>
+                <h1>BusPoint</h1>
+                <p>Smart Public Transport</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <h2>Welcome Back</h2>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="login-phone" placeholder="078XXXXXXX" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+                <button onclick="Auth.login()" class="btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <p class="auth-switch">
+                    Don't have an account? 
+                    <a href="#" onclick="Auth.showRegister()">Sign Up</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="auth-form hidden">
+                <h2>Create Account</h2>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="reg-name" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="reg-phone" placeholder="078XXXXXXX" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email (Optional)</label>
+                    <input type="email" id="reg-email" placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="reg-password" placeholder="Min 6 characters">
+                </div>
+                <button onclick="Auth.register()" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                <p class="auth-switch">
+                    Already have an account? 
+                    <a href="#" onclick="Auth.showLogin()">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <i class="fas fa-bus"></i>
+                <span>BusPoint</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <!-- Dynamic based on role -->
+            </div>
+            <div class="nav-user">
+                <div class="notification-bell" onclick="Notifications.toggle()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notif-count">0</span>
+                </div>
+                <div class="user-menu" onclick="Auth.toggleUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="user-name">User</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Notifications Panel -->
+        <div id="notifications-panel" class="notifications-panel hidden">
+            <div class="panel-header">
+                <h3><i class="fas fa-bell"></i> Notifications</h3>
+                <button onclick="Notifications.toggle()" class="btn-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notifications-list" id="notifications-list">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+
+        <!-- User Dropdown -->
+        <div id="user-dropdown" class="user-dropdown hidden">
+            <div class="dropdown-item" onclick="Auth.showProfile()">
+                <i class="fas fa-user"></i> My Profile
+            </div>
+            <div class="dropdown-item" onclick="Auth.logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="main-content">
+            <!-- Dynamic content based on role/view -->
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Core Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/maps.js"></script>
+    <script src="js/qr.js"></script>
+    
+    <!-- Role-specific Scripts -->
+    <script src="passenger/booking.js"></script>
+    <script src="passenger/tickets.js"></script>
+    <script src="passenger/tracking.js"></script>
+    
+    <script src="driver/dashboard.js"></script>
+    <script src="driver/location.js"></script>
+    <script src="driver/scanner.js"></script>
+    
+    <script src="admin/dashboard.js"></script>
+    <script src="admin/buses.js"></script>
+    <script src="admin/routes.js"></script>
+    <script src="admin/trips.js"></script>
+    
+    <!-- Main App -->
+    <script src="js/app.js"></script>
+</body>
+</html>

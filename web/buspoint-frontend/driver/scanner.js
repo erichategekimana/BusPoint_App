@@ -1,0 +1,258 @@
+const DriverScanner = {
+    html5QrCode: null,
+    isScanning: false,
+    
+    init() {
+        this.render();
+    },
+    
+    render() {
+        const container = document.getElementById('main-content');
+        container.innerHTML = `
+            <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-qrcode"></i> Ticket Scanner</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="scanner-container" style="margin-bottom: 1.5rem;">
+                            <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+                        </div>
+                        
+                        <div id="manual-entry" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);">
+                            <p style="color: var(--gray-500); margin-bottom: 1rem;">Or enter ticket token manually</p>
+                            <div style="display: flex; gap: 0.5rem; max-width: 300px; margin: 0 auto;">
+                                <input type="text" id="manual-token" placeholder="XXXXXX" maxlength="16" 
+                                       style="flex: 1; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: var(--radius); text-align: center; font-family: monospace; font-size: 1.1rem; text-transform: uppercase;">
+                                <button class="btn btn-success" onclick="DriverScanner.verifyManual()">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="scan-result" style="margin-top: 1.5rem;"></div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid" style="margin-top: 2rem;">
+                    <div class="stat-card">
+                        <div class="stat-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 id="scanned-count">0</h4>
+                            <p>Verified Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 id="invalid-count">0</h4>
+                            <p>Invalid Attempts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        setTimeout(() => this.startScanner(), 100);
+    },
+    
+    startScanner() {
+        const qrReader = document.getElementById('qr-reader');
+        if (!qrReader) return;
+        
+        this.html5QrCode = new Html5Qrcode("qr-reader");
+        
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+        
+        this.html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText, decodedResult) => {
+                this.onScanSuccess(decodedText);
+            },
+            (errorMessage) => {
+                // Scan error - ignore continuous errors
+            }
+        ).catch(err => {
+            console.error('Failed to start scanner:', err);
+            qrReader.innerHTML = `
+                <div class="empty-state" style="padding: 2rem;">
+                    <i class="fas fa-camera-slash"></i>
+                    <h3>Camera Access Required</h3>
+                    <p>Please allow camera access to scan tickets, or use manual entry below.</p>
+                </div>
+            `;
+        });
+        
+        this.isScanning = true;
+    },
+    
+    onScanSuccess(token) {
+        // Prevent multiple rapid scans
+        if (this.isScanning === 'processing') return;
+        this.isScanning = 'processing';
+        
+        // Pause scanning
+        this.html5QrCode.pause();
+        
+        // Verify token
+        this.verifyToken(token);
+    },
+    
+    async verifyToken(token) {
+        Utils.showLoading('Verifying ticket...');
+        
+        try {
+            // In real app, call API to verify token
+            // const result = await API.driver.verifyTicket(token);
+            
+            // Simulate verification
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const isValid = token.length >= 6; // Simple validation
+            const result = {
+                valid: isValid,
+                ticket: isValid ? {
+                    passenger: 'John Doe',
+                    seat: 5,
+                    route: 'Kimironko - Nyabugogo',
+                    departure: '08:00 AM'
+                } : null
+            };
+            
+            Utils.hideLoading();
+            this.showResult(result);
+            
+            if (result.valid) {
+                this.updateStats('scanned');
+            } else {
+                this.updateStats('invalid');
+            }
+            
+        } catch (error) {
+            Utils.hideLoading();
+            this.showResult({ valid: false, error: 'Verification failed' });
+        }
+    },
+    
+    verifyManual() {
+        const token = document.getElementById('manual-token').value.trim().toUpperCase();
+        if (!token) {
+            Utils.toast('Please enter a token', 'warning');
+            return;
+        }
+        this.verifyToken(token);
+    },
+    
+    showResult(result) {
+        const container = document.getElementById('scan-result');
+        
+        if (result.valid) {
+            container.innerHTML = `
+                <div style="background: #E8F5E9; border: 2px solid var(--primary); border-radius: var(--radius-lg); padding: 1.5rem; animation: slideUp 0.3s ease;">
+                    <div style="width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-check" style="color: white; font-size: 1.5rem;"></i>
+                    </div>
+                    <h3 style="color: var(--primary-dark); margin-bottom: 1rem;">Ticket Valid!</h3>
+                    <div style="text-align: left; background: white; padding: 1rem; border-radius: var(--radius); margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--gray-500);">Passenger</span>
+                            <span style="font-weight: 600;">${result.ticket.passenger}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span style="color: var(--gray-500);">Seat</span>
+                            <span style="font-weight: 600;">#${result.ticket.seat}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-500);">Route</span>
+                            <span style="font-weight: 600;">${result.ticket.route}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-success btn-lg" onclick="DriverScanner.resumeScanning()" style="width: 100%;">
+                        <i class="fas fa-qrcode"></i> Scan Next
+                    </button>
+                </div>
+            `;
+            
+            // Play success sound
+            this.playSound('success');
+            
+        } else {
+            container.innerHTML = `
+                <div style="background: #FFEBEE; border: 2px solid var(--danger); border-radius: var(--radius-lg); padding: 1.5rem; animation: shake 0.5s ease;">
+                    <div style="width: 60px; height: 60px; background: var(--danger); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <i class="fas fa-times" style="color: white; font-size: 1.5rem;"></i>
+                    </div>
+                    <h3 style="color: var(--danger); margin-bottom: 0.5rem;">Invalid Ticket</h3>
+                    <p style="color: var(--gray-600); margin-bottom: 1.5rem;">${result.error || 'This ticket is not valid or has already been used.'}</p>
+                    <button class="btn btn-outline" onclick="DriverScanner.resumeScanning()" style="width: 100%;">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                </div>
+            `;
+            
+            // Play error sound
+            this.playSound('error');
+        }
+    },
+    
+    resumeScanning() {
+        document.getElementById('scan-result').innerHTML = '';
+        document.getElementById('manual-token').value = '';
+        
+        if (this.html5QrCode) {
+            this.html5QrCode.resume();
+            this.isScanning = true;
+        }
+    },
+    
+    updateStats(type) {
+        const element = document.getElementById(type === 'scanned' ? 'scanned-count' : 'invalid-count');
+        if (element) {
+            element.textContent = parseInt(element.textContent) + 1;
+        }
+    },
+    
+    playSound(type) {
+        // Create audio context for beep sounds
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'success') {
+                osc.frequency.value = 880; // A5
+                gain.gain.value = 0.1;
+                osc.start();
+                setTimeout(() => osc.stop(), 200);
+            } else {
+                osc.frequency.value = 220; // A3
+                gain.gain.value = 0.1;
+                osc.start();
+                setTimeout(() => osc.stop(), 300);
+            }
+        } catch (e) {
+            // Audio not supported
+        }
+    },
+    
+    cleanup() {
+        if (this.html5QrCode) {
+            this.html5QrCode.stop().catch(() => {});
+            this.html5QrCode = null;
+        }
+        this.isScanning = false;
+    }
+};
