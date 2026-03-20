@@ -123,9 +123,12 @@ def create_trip(validated_data: TripCreateSchema):
         bus_id=validated_data.bus_id,
         route_id=validated_data.route_id,
         departure_time=validated_data.departure_time,
-        status='scheduled'
+        status='scheduled',
+        current_capacity=bus.capacity
     )
     db.session.add(new_trip)
+    db.session.flush()  # Get the new trip ID before commit for the response
+    db.session.refresh(new_trip)  # Refresh to get any defaults set by the database
     return jsonify({"message": "Trip scheduled successfully", "trip": new_trip.to_dict()}), 201
 
 @trip_bp.route('/<uuid:trip_id>/status', methods=['PATCH'])
