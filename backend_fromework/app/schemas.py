@@ -33,7 +33,7 @@ class TripCreateSchema(BaseModel):
     bus_id: UUID = Field(...)
     route_id: UUID = Field(...)
     departure_time: datetime = Field(..., description="ISO Format: YYYY-MM-DDTHH:MM:SS")
-    price: float = Field(..., gt=0)
+    # price: float = Field(..., gt=0) --- IGNORE ---
 
 
 class BookingCreateSchema(BaseModel):

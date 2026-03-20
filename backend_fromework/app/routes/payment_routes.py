@@ -78,8 +78,8 @@ def momo_webhook():
         booking.status = 'confirmed'
         # reduce trip capacity
         trip = Trip.query.get(booking.trip_id)
-        if trip.capacity > 0:
-            trip.capacity -= 1
+        if trip.current_capacity > 0:
+            trip.current_capacity -= 1
         else:
             # handle edge case if paid but full - refund logic would go here in a real app
 

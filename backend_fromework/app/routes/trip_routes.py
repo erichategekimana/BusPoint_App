@@ -123,7 +123,6 @@ def create_trip(validated_data: TripCreateSchema):
         bus_id=validated_data.bus_id,
         route_id=validated_data.route_id,
         departure_time=validated_data.departure_time,
-        price=validated_data.price,
         status='scheduled'
     )
     db.session.add(new_trip)
