@@ -30,6 +30,7 @@ class Booking(db.Model):
             "id": str(self.id),
             "user_id": str(self.user_id),
             "trip_id": str(self.trip_id),
+            "departure_time": self.trip.departure_time,
             "status": self.status,
             "seat_number": self.seat_number,
             "pickup_stop": self.pickup_stop.name if self.pickup_stop else None,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from flask import Blueprint, jsonify, request
@@ -9,6 +10,8 @@ from pydantic import BaseModel, Field, ValidationError
 from app.auth import jwt_required, role_required
 from app.database import db
 from app.models import Booking, Payment
+
+log = logging.getLogger(__name__)
 
 
 payment_bp = Blueprint("payment_api", __name__, url_prefix="/api")
@@ -20,6 +23,7 @@ class PaymentCreateRequest(BaseModel):
     currency: str | None = Field(default=None, max_length=3)
     payment_method: str | None = Field(default=None, max_length=20)
     transaction_ref: str | None = Field(default=None, max_length=100)
+    phone_number: str | None = Field(default=None, max_length=20)
 
 
 class PaymentUpdateRequest(BaseModel):
@@ -108,6 +112,24 @@ def create_payment():
     if validated.transaction_ref and Payment.query.filter_by(transaction_ref=validated.transaction_ref).first():
         return jsonify({"error": "transaction_ref_already_exists"}), 409
 
+    # ── MTN MoMo: initiate Request-to-Pay ────────────────────────────────
+    momo_ref = None
+    if validated.payment_method == "mtn":
+        phone = validated.phone_number or current_user.get("phone_number")
+        if not phone:
+            return jsonify({"error": "phone_number_required"}), 400
+        try:
+            from app.momo import request_to_pay
+            momo_ref = request_to_pay(
+                amount=validated.amount,
+                currency=validated.currency,
+                phone_number=phone,
+                payer_message=f"BusPoint booking {str(validated.booking_id)[:8]}",
+            )
+        except Exception as exc:
+            log.exception("MoMo request-to-pay failed")
+            return jsonify({"error": "momo_request_failed", "message": str(exc)}), 502
+
     payment = Payment(
         booking_id=validated.booking_id,
         amount=validated.amount,
@@ -116,12 +138,60 @@ def create_payment():
         payment.currency = validated.currency
     if validated.payment_method is not None:
         payment.payment_method = validated.payment_method
-    if validated.transaction_ref is not None:
-        payment.transaction_ref = validated.transaction_ref
+    # Use MoMo reference if available, otherwise use client-provided ref
+    payment.transaction_ref = momo_ref or validated.transaction_ref
 
     db.session.add(payment)
     db.session.commit()
     return jsonify(payment.to_dict()), 201
+
+
+# ── MoMo payment status check ─────────────────────────────────────────────
+
+@payment_bp.get("/payments/<payment_id>/status")
+@jwt_required()
+def check_payment_status(payment_id: str):
+    """Poll MoMo for the current status of a pending payment."""
+    current_user = __import__('flask').g.current_user or {}
+    role = current_user.get("role")
+
+    payment_uuid, error = parse_uuid(payment_id, "payment_id")
+    if error:
+        return error
+
+    payment = db.session.get(Payment, payment_uuid)
+    if not payment:
+        return jsonify({"error": "payment_not_found"}), 404
+
+    # Passengers may only check their own payments
+    booking = db.session.get(Booking, payment.booking_id)
+    if role != "admin" and booking and str(booking.user_id) != current_user.get("user_id"):
+        return jsonify({"error": "forbidden"}), 403
+
+    # If already finalised, just return current state
+    if payment.status in ("completed", "failed"):
+        return jsonify(payment.to_dict()), 200
+
+    # Only query MoMo if we have a transaction_ref (i.e. a MoMo reference id)
+    if payment.payment_method == "mtn" and payment.transaction_ref:
+        try:
+            from app.momo import get_payment_status
+            momo = get_payment_status(payment.transaction_ref)
+            momo_status = momo.get("status", "PENDING")
+
+            if momo_status == "SUCCESSFUL":
+                payment.status = "completed"
+                payment.paid_at = datetime.now(timezone.utc)
+                booking.status = "confirmed"
+            elif momo_status == "FAILED":
+                payment.status = "failed"
+
+            db.session.commit()
+        except Exception as exc:
+            log.exception("MoMo status check failed")
+            return jsonify({"error": "momo_status_check_failed", "message": str(exc)}), 502
+
+    return jsonify(payment.to_dict()), 200
 
 
 @payment_bp.patch("/payments/<payment_id>")

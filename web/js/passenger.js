@@ -492,29 +492,79 @@ function submitPayment() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
 
+    const phone = document.getElementById('payment-phone-input')?.value.trim();
     const ref = document.getElementById('payment-ref-input')?.value.trim();
     const txRef = ref || `BP-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
-    api.initiatePayment({
+    const paymentData = {
         booking_id: pendingBooking.id,
         amount: 500,
-        currency: 'RWF',
+        currency: 'EUR',  // MoMo sandbox only supports EUR
         payment_method: selectedPaymentMethod,
-        transaction_ref: txRef
-    })
-        .then(() => {
-            closePaymentModal();
-            showNotification('Payment successful! Your seat is confirmed.', 'success');
-            loadUserBookings();
-            showPassengerSection('bookings');
+        transaction_ref: selectedPaymentMethod === 'mtn' ? undefined : txRef,
+    };
+
+    // Include phone number for MoMo payments
+    if (selectedPaymentMethod === 'mtn' && phone) {
+        paymentData.phone_number = phone;
+    }
+
+    api.initiatePayment(paymentData)
+        .then(payment => {
+            if (selectedPaymentMethod === 'mtn' && payment.status === 'pending') {
+                // MoMo: show waiting state and poll for confirmation
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Waiting for MoMo confirmation…';
+                pollMomoStatus(payment.id, 0);
+            } else {
+                closePaymentModal();
+                showNotification('Payment successful! Your seat is confirmed.', 'success');
+                loadUserBookings();
+                showPassengerSection('bookings');
+            }
         })
-        .catch(() => {
+        .catch(err => {
             closePaymentModal();
-            // Booking exists even if payment fails — inform user
-            showNotification('Booking confirmed. Payment will be collected on boarding.', 'info');
+            showNotification(err.message || 'Payment failed. Booking saved — pay on boarding.', 'error');
             loadUserBookings();
             showPassengerSection('bookings');
         });
+}
+
+function pollMomoStatus(paymentId, attempt) {
+    const MAX_ATTEMPTS = 12;  // ~60 seconds (12 × 5s)
+    const POLL_INTERVAL = 5000;
+
+    if (attempt >= MAX_ATTEMPTS) {
+        closePaymentModal();
+        showNotification('Payment is still processing. Check your bookings for updates.', 'info');
+        loadUserBookings();
+        showPassengerSection('bookings');
+        return;
+    }
+
+    setTimeout(() => {
+        api.checkPaymentStatus(paymentId)
+            .then(payment => {
+                if (payment.status === 'completed') {
+                    closePaymentModal();
+                    showNotification('MoMo payment successful! Your seat is confirmed.', 'success');
+                    loadUserBookings();
+                    showPassengerSection('bookings');
+                } else if (payment.status === 'failed') {
+                    closePaymentModal();
+                    showNotification('MoMo payment was declined. Please try again.', 'error');
+                    loadUserBookings();
+                    showPassengerSection('bookings');
+                } else {
+                    // Still pending — keep polling
+                    pollMomoStatus(paymentId, attempt + 1);
+                }
+            })
+            .catch(() => {
+                // Network error — try again
+                pollMomoStatus(paymentId, attempt + 1);
+            });
+    }, POLL_INTERVAL);
 }
 
 // ── BOOKINGS ──────────────────────────────────────────────────────────────────
@@ -547,8 +597,6 @@ function loadUserBookings() {
 function renderBookingCard(booking) {
     const statusClass = booking.status === 'confirmed' ? 'status-scheduled'
         : booking.status === 'cancelled' ? 'status-cancelled' : 'status-active';
-    const pickup = getStopName(booking.pickup_stop_id);
-    const dropoff = getStopName(booking.dropoff_stop_id);
     const token = (booking.ticket_token || '').slice(0, 12) + '…';
     const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
 
@@ -557,13 +605,13 @@ function renderBookingCard(booking) {
             <div class="trip-header">
                 <div>
                     <div class="trip-time">Seat ${booking.seat_number || '—'}</div>
-                    <div class="trip-route">${pickup} → ${dropoff}</div>
+                    <div class="trip-route">${booking.pickup_stop} → ${booking.dropoff_stop}</div>
                 </div>
                 <span class="status-badge ${statusClass}">${booking.status}</span>
             </div>
             <div class="trip-details">
                 <div class="detail-item"><i class="fas fa-ticket-alt"></i><span>Ref: ${token}</span></div>
-                <div class="detail-item"><i class="fas fa-calendar"></i><span>${new Date(booking.created_at).toLocaleDateString()}</span></div>
+                <div class="detail-item"><i class="fas fa-calendar"></i><span>${booking.departure_time}</span></div>
             </div>
             <div class="trip-actions">
                 <button onclick="viewTicket('${booking.id}')" class="btn-secondary" style="flex:1">
@@ -580,11 +628,10 @@ function renderBookingCard(booking) {
 function viewTicket(bookingId) {
     api.getBooking(bookingId)
         .then(booking => {
-            document.getElementById('ticket-from').textContent = getStopName(booking.pickup_stop_id);
-            document.getElementById('ticket-to').textContent = getStopName(booking.dropoff_stop_id);
+            document.getElementById('ticket-from').textContent = booking.pickup_stop;
+            document.getElementById('ticket-to').textContent = booking.dropoff_stop;
             document.getElementById('ticket-seat').textContent = booking.seat_number || 'N/A';
-            document.getElementById('ticket-departure').textContent = booking.trip?.departure_time
-                ? new Date(booking.trip.departure_time).toLocaleString() : 'N/A';
+            document.getElementById('ticket-departure').textContent = booking.departure_time;
             document.getElementById('ticket-status').textContent = booking.status;
             document.getElementById('ticket-ref').textContent = booking.ticket_token || '';
             generateQRCode(booking.ticket_token || bookingId, 'ticket-qr-canvas');

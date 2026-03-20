@@ -165,6 +165,10 @@ class APIService {
         return this.request(`/payments/${id}`);
     }
 
+    async checkPaymentStatus(id) {
+        return this.request(`/payments/${id}/status`);
+    }
+
     async createBus(data) {
         return this.request('/buses', { method: 'POST', body: JSON.stringify(data) });
     }
