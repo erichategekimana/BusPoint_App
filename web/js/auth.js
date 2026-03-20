@@ -63,16 +63,17 @@ function setupAuthForms() {
             authToken = token;
             currentUser = response.user;
             
-            // Hide auth section
+            // Clear form and hide auth section
+            e.target.reset();
             document.getElementById('auth-section').classList.add('hidden');
-            
+
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
             } else if (currentUser.role === 'driver') {
                 showDriverDashboard();
             }
-            
+
             // Show success message
             showNotification('Login successful!', 'success');
             
@@ -141,16 +142,17 @@ function setupAuthForms() {
             authToken = token;
             currentUser = response.user;
             
-            // Hide auth section
+            // Clear form and hide auth section
+            e.target.reset();
             document.getElementById('auth-section').classList.add('hidden');
-            
+
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
             } else if (currentUser.role === 'driver') {
                 showDriverDashboard();
             }
-            
+
             showNotification('Registration successful! Welcome to Bus Point!', 'success');
             
         } catch (error) {
@@ -179,10 +181,15 @@ function logout() {
     // Hide dashboards
     document.getElementById('passenger-dashboard').classList.remove('active');
     document.getElementById('driver-dashboard').classList.remove('active');
-    
+
+    // Clear any leftover form data and show login
+    document.getElementById('loginForm').reset();
+    document.getElementById('registerForm').reset();
+    showLogin();
+
     // Show auth section
     document.getElementById('auth-section').classList.remove('hidden');
-    
+
     showNotification('Logged out successfully', 'success');
 }
 
