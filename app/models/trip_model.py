@@ -27,11 +27,14 @@ class Trip(db.Model):
     def to_dict(self):
         return {
             "id": str(self.id),
+            "bus_id": str(self.bus_id),
             "bus_plate": self.bus.plate_number,
+            "route_id": str(self.route_id),
             "route_name": self.route.name,
             "driver_id": str(self.driver_id) if self.driver_id else None,
             "departure_time": self.departure_time.isoformat() if self.departure_time else None,
             "arrival_time": self.arrival_time.isoformat() if self.arrival_time else None,
             "status": self.status,
+            "current_capacity": self.current_capacity,
             "available_seats": self.current_capacity
         }

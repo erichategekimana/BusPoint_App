@@ -483,17 +483,102 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="booking-modal" class="modal">
-        <div class="modal-content">
+    <!-- Passenger: Booking Modal (seat picker) -->
+    <div id="passenger-booking-modal" class="modal">
+        <div class="modal-content" style="max-width:520px">
             <div class="modal-header">
-                <h3>Book Trip</h3>
-                <button onclick="closeModal('booking-modal')" class="modal-close">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h3>Book a Seat</h3>
+                <button onclick="closeBookingModal()" class="modal-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <!-- Booking form will be populated here -->
+                <div id="booking-trip-info" style="margin-bottom:16px"></div>
+                <h4 style="margin-bottom:8px;color:#1A8A72"><i class="fas fa-chair"></i> Pick your seat</h4>
+                <p style="font-size:12px;color:#888;margin-bottom:10px">
+                    <span style="display:inline-block;width:14px;height:14px;background:#e0e0e0;border-radius:3px;margin-right:4px;vertical-align:middle"></span>Available &nbsp;
+                    <span style="display:inline-block;width:14px;height:14px;background:#FF3B30;border-radius:3px;margin-right:4px;vertical-align:middle"></span>Taken &nbsp;
+                    <span style="display:inline-block;width:14px;height:14px;background:#1A8A72;border-radius:3px;margin-right:4px;vertical-align:middle"></span>Selected
+                </p>
+                <div id="booking-seat-grid" style="max-height:220px;overflow-y:auto;margin-bottom:16px"></div>
+                <button id="booking-confirm-btn" onclick="confirmBooking()" class="btn-primary" style="width:100%" disabled>
+                    <i class="fas fa-check"></i> Confirm Booking
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passenger: Payment Modal -->
+    <div id="passenger-payment-modal" class="modal">
+        <div class="modal-content" style="max-width:460px">
+            <div class="modal-header">
+                <h3><i class="fas fa-money-bill-wave"></i> Pay for Trip</h3>
+                <button onclick="closePaymentModal()" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="background:#f5f5f5;border-radius:10px;padding:12px;margin-bottom:16px;text-align:center">
+                    <p style="font-size:13px;color:#666;margin-bottom:4px">Booking Reference</p>
+                    <p id="payment-booking-ref" style="font-weight:bold;font-size:15px;color:#1A8A72;word-break:break-all"></p>
+                    <p style="font-size:22px;font-weight:bold;margin-top:8px">500 <span style="font-size:14px;color:#666">RWF</span></p>
+                </div>
+                <h4 style="margin-bottom:10px">Payment Method</h4>
+                <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+                    <button class="payment-method-btn active" data-method="mtn" onclick="selectPaymentMethod('mtn')"
+                        style="flex:1;padding:10px;border:2px solid #1A8A72;border-radius:8px;background:#e8f5f2;cursor:pointer;font-weight:bold">
+                        <i class="fas fa-mobile-alt"></i><br>MTN MoMo
+                    </button>
+                    <button class="payment-method-btn" data-method="airtel" onclick="selectPaymentMethod('airtel')"
+                        style="flex:1;padding:10px;border:2px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold">
+                        <i class="fas fa-mobile-alt"></i><br>Airtel Money
+                    </button>
+                    <button class="payment-method-btn" data-method="card" onclick="selectPaymentMethod('card')"
+                        style="flex:1;padding:10px;border:2px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:bold">
+                        <i class="fas fa-credit-card"></i><br>Card
+                    </button>
+                </div>
+                <div id="payment-phone-field" class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="payment-phone-input" placeholder="e.g. 0788123456">
+                </div>
+                <div id="payment-ref-field" class="form-group" style="display:none">
+                    <label>Card Reference / Transaction ID</label>
+                    <input type="text" id="payment-ref-input" placeholder="Enter reference">
+                </div>
+                <button id="payment-submit-btn" onclick="submitPayment()" class="btn-primary" style="width:100%;margin-top:8px">
+                    <i class="fas fa-money-bill"></i> Pay Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Passenger: Ticket Modal (QR code) -->
+    <div id="passenger-ticket-modal" class="modal">
+        <div class="modal-content" style="max-width:400px">
+            <div class="modal-header">
+                <h3><i class="fas fa-ticket-alt"></i> Your Ticket</h3>
+                <button onclick="closeTicketModal()" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="text-align:center">
+                <canvas id="ticket-qr-canvas" style="border:1px solid #eee;border-radius:8px;margin-bottom:16px"></canvas>
+                <div style="background:#f5f5f5;border-radius:10px;padding:14px;text-align:left">
+                    <div class="detail-item" style="margin-bottom:8px">
+                        <i class="fas fa-location-arrow" style="color:#1A8A72;width:18px"></i>
+                        <span><strong id="ticket-from"></strong> → <strong id="ticket-to"></strong></span>
+                    </div>
+                    <div class="detail-item" style="margin-bottom:8px">
+                        <i class="fas fa-calendar" style="color:#1A8A72;width:18px"></i>
+                        <span id="ticket-departure"></span>
+                    </div>
+                    <div class="detail-item" style="margin-bottom:8px">
+                        <i class="fas fa-chair" style="color:#1A8A72;width:18px"></i>
+                        <span>Seat <strong id="ticket-seat"></strong></span>
+                    </div>
+                    <div class="detail-item" style="margin-bottom:8px">
+                        <i class="fas fa-info-circle" style="color:#1A8A72;width:18px"></i>
+                        <span>Status: <strong id="ticket-status"></strong></span>
+                    </div>
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ccc;font-size:11px;color:#999;word-break:break-all">
+                        Token: <span id="ticket-ref"></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -88,15 +88,22 @@ def get_payment(payment_id: str):
 
 @payment_bp.post("/payments")
 @jwt_required()
-@role_required("admin")
 def create_payment():
+    current_user = __import__('flask').g.current_user or {}
+    role = current_user.get("role")
+
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(PaymentCreateRequest, payload)
     if error:
         return error
 
-    if not db.session.get(Booking, validated.booking_id):
+    booking = db.session.get(Booking, validated.booking_id)
+    if not booking:
         return jsonify({"error": "booking_not_found"}), 404
+
+    # Passengers may only pay for their own bookings
+    if role != "admin" and str(booking.user_id) != current_user.get("user_id"):
+        return jsonify({"error": "forbidden"}), 403
 
     if validated.transaction_ref and Payment.query.filter_by(transaction_ref=validated.transaction_ref).first():
         return jsonify({"error": "transaction_ref_already_exists"}), 409

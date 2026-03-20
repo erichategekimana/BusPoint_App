@@ -141,6 +141,17 @@ class APIService {
         return this.getBookings();
     }
 
+    async getBooking(id) {
+        return this.request(`/bookings/${id}`);
+    }
+
+    async cancelBooking(id) {
+        return this.request(`/bookings/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: 'cancelled' })
+        });
+    }
+
     // ── Payments ─────────────────────────────────────────────────────────────
 
     async initiatePayment(data) {

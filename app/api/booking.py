@@ -142,14 +142,27 @@ def create_booking():
 
 @booking_bp.patch("/bookings/<booking_id>")
 @jwt_required()
-@role_required("admin")
 def update_booking(booking_id: str):
+    current_user = g.current_user or {}
+    role = current_user.get("role")
+
     booking_uuid, error = parse_uuid(booking_id, "booking_id")
     if error:
         return error
     booking = db.session.get(Booking, booking_uuid)
     if not booking:
         return jsonify({"error": "booking_not_found"}), 404
+
+    # Passengers may only cancel their own booking
+    if role != "admin":
+        if str(booking.user_id) != current_user.get("user_id"):
+            return jsonify({"error": "forbidden"}), 403
+        payload = request.get_json(silent=True) or {}
+        if payload.get("status") != "cancelled":
+            return jsonify({"error": "passengers_may_only_cancel"}), 403
+        booking.status = "cancelled"
+        db.session.commit()
+        return jsonify(booking.to_dict()), 200
 
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(BookingUpdateRequest, payload)
