@@ -147,3 +147,12 @@ def update_trip_status(trip_id):
     trip = Trip.query.get_or_404(trip_id)
     trip.status = new_status
     return jsonify({"message": f"Trip status updated to {new_status}"}), 200
+
+
+
+@trip_bp.route('/', methods=['GET'])
+@jwt_required
+def get_all_trips():
+    """Returns all trips for admin/passenger lists."""
+    trips = Trip.query.all()
+    return jsonify([trip.to_dict() for trip in trips]), 200
