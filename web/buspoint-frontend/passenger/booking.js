@@ -551,7 +551,7 @@ const PassengerBooking = {
         // Generate QR code
         if (this.createdBooking?.ticket_token) {
             setTimeout(() => {
-                QRCode.generate(this.createdBooking.ticket_token, 'ticket-qr');
+                QRGenerator.generate(this.createdBooking.ticket_token, 'ticket-qr');
             }, 100);
         }
     }

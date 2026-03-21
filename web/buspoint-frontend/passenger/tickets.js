@@ -160,8 +160,8 @@ const PassengerTickets = {
         Utils.modal.open(modalContent, { size: '' });
         
         setTimeout(() => {
-            QRCode.generate(ticket.ticket_token, 'modal-qr-code', 200);
-        }, 100);
+            QRGenerator.generate(ticket.ticket_token, 'modal-qr-code', 200);
+        }, 150);
     },
     
     trackBus(tripId) {

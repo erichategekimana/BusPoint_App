@@ -1,4 +1,4 @@
-const QRCode = {
+const QRGenerator = {
     generate(text, containerId, size = 150) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -6,13 +6,13 @@ const QRCode = {
         container.innerHTML = '';
         
         try {
-            new QRCodeJS(container, {
+            new QRCode(container, {
                 text: text,
                 width: size,
                 height: size,
                 colorDark: '#1B5E20',
                 colorLight: '#ffffff',
-                correctLevel: QRCodeJS.CorrectLevel.H
+                correctLevel: 1
             });
         } catch (error) {
             console.error('QR generation failed:', error);

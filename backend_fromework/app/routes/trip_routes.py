@@ -156,3 +156,11 @@ def get_all_trips():
     """Returns all trips for admin/passenger lists."""
     trips = Trip.query.all()
     return jsonify([trip.to_dict() for trip in trips]), 200
+
+
+@trip_bp.route('/active', methods=['GET'])
+@jwt_required
+def get_active_trips():
+    # Fetch trips that haven't been completed or cancelled yet
+    active_trips = Trip.query.filter(Trip.status.in_(['scheduled', 'delayed'])).all()
+    return jsonify([t.to_dict() for t in active_trips]), 200

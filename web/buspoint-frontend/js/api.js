@@ -94,6 +94,9 @@ const API = {
             return API.request(`/trips/${tripId}`);
         },
         
+        getActiveTrips() {
+            return API.request('/trips/active');
+        },
         // Bookings
         createBooking(bookingData) {
             return API.request('/bookings/', {

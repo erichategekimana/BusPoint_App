@@ -470,15 +470,16 @@ body {
 
 /* User Dropdown */
 .user-dropdown {
+    z-index: 9999 !important;
     position: absolute;
     top: 64px;
     right: 2rem;
     background: white;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     border-radius: var(--radius);
     min-width: 200px;
     overflow: hidden;
-    animation: fadeIn 0.2s ease;
+    animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -488,7 +489,8 @@ body {
 
 .dropdown-item {
     padding: 0.875rem 1.25rem;
-    cursor: pointer;
+    cursor: pointer !important;
+    pointer-events: auto !important;
     transition: var(--transition);
     display: flex;
     align-items: center;
