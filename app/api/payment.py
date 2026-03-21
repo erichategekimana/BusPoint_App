@@ -5,13 +5,22 @@ from app.database import db
 
 payment_bp = Blueprint('payment_api', __name__, url_prefix='/api')
 
+# Route to see payments
+@payment_bp.route('/payments', methods=['GET'])
+def get_payments():
+    payments= Payment.query.all()
+    return jsonify([p.to_dict() for p in payments]), 200
+
+# Route to create a payment
 @payment_bp.route('/payments', methods=['POST'])
-def process_payment():
+def create_payment():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
 
     new_payment = Payment(
          booking_id=data.get('booking_id'),
-         amount=data.get('amaount'),
+         amount=data.get('amount'),
          payment_method=data.get('payment_method'),
          transaction_ref=data.get('transaction_ref'),
          status= 'completed'

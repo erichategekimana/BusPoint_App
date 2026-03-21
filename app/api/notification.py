@@ -8,8 +8,8 @@ notification_bp = Blueprint('notification_api', __name__, url_prefix='/api')
 def get_user_notifications(user_id):
 
     # Fetch notifications for a specific user
-    notifications= Notification.query.filter_by(user_id=user_id).order_by(Notification.created_at.desc()).all()
-    return jsonify([n.to_dict() for n in notification]), 200
+    notifications = Notification.query.filter_by(user_id=user_id).order_by(Notification.created_at.desc()).all()
+    return jsonify([n.to_dict() for n in notifications]), 200
 
 @notification_bp.route('/notifications/<uuid:id>/read', methods=['PATCH'])
 def mark_as_read(id):

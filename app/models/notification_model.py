@@ -24,4 +24,3 @@ class Notification(db.Model):
             "is_ready": self.is_ready,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
-
