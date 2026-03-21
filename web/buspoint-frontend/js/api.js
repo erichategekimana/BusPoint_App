@@ -31,11 +31,13 @@ const API = {
             const data = await response.json().catch(() => null);
             
             if (!response.ok) {
-                if (response.status === 401) {
-                    Utils.storage.remove('token');
-                    window.location.reload();
+                if (response.status === 401 && token && !endpoint.includes('/auth/login')) {
+                Utils.storage.remove('token');
+                window.location.reload();
+                return;
                 }
-                throw new Error(data?.message || `HTTP ${response.status}`);
+                const errorMessage = data?.error || data?.message || `Error: ${response.status}`;
+            throw new Error(errorMessage);
             }
             
             return data;

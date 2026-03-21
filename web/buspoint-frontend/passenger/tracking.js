@@ -42,6 +42,7 @@ const PassengerTracking = {
         
         // Initialize map
         this.map = BusMap.init('tracking-map');
+        setTimeout(() => this.map.invalidateSize(), 100);
         
         if (this.trackTripId) {
             await this.startTracking(this.trackTripId);
@@ -99,6 +100,7 @@ const PassengerTracking = {
         try {
             this.currentTrip = await API.passenger.getTripDetails(tripId);
             Utils.hideLoading();
+            this.map.invalidateSize();
             
             this.renderTrackingDetails();
             this.updateBusLocation();

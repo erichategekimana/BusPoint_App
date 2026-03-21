@@ -105,17 +105,24 @@ const App = {
     },
     
     cleanupCurrentPage() {
-        // Cleanup specific modules
-        PassengerTracking.cleanup();
-        DriverScanner.cleanup();
-        DriverLocation.stopTracking();
-        
-        // Destroy any open modals
+        const role = Auth.currentUser?.role;
+
+        // only cleanup passenger tracking if user is a passenger
+        if (role === Config.ROLES.PASSENGER) {
+            PassengerTracking.cleanup();
+        }
+
+        // Only cleanup driver dashboard if user is a driver
+        if (role === Config.ROLES.DRIVER) {
+            DriverDashboard.cleanup();
+            if (window.DriverLocation) {
+                DriverLocation.stopTracking();
+            }
+        }
+        // destroy any open modals
         Utils.modal.close();
-        
-        // Clear intervals/timeouts if needed
     },
-    
+
     renderProfile() {
         const container = document.getElementById('main-content');
         const user = Auth.currentUser;

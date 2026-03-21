@@ -6,6 +6,20 @@ const PassengerBooking = {
     bookingData: {},
     
     init() {
+
+        const container = document.getElementById('main-content');
+        container.innerHTML = `
+            <div class="passenger-home">
+                <div class="booking-container">
+                    <div id="booking-stepper"></div>
+                    <div id="step-content" class="card" style="margin-top: 2rem; min-height: 400px;">
+                        </div>
+                </div>
+            </div>
+        `;
+
+
+
         this.renderStepper();
         this.showStep(1);
     },
