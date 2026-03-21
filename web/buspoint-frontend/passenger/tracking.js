@@ -53,46 +53,36 @@ const PassengerTracking = {
     },
     
     async loadActiveTrips() {
-        try {
-            const tickets = await API.passenger.getMyBookings();
-            const activeTickets = tickets.filter(t => 
-                t.status === 'confirmed' && 
-                (t.trip?.status === 'scheduled' || t.trip?.status === 'delayed')
-            );
-            
-            const container = document.getElementById('active-trips-list');
-            
-            if (activeTickets.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="padding: 1rem;">
-                        <i class="fas fa-calendar-times"></i>
-                        <p>No active trips to track</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = activeTickets.map(ticket => `
-                <div class="trip-card" style="cursor: pointer; margin-bottom: 0.75rem;" 
-                     onclick="PassengerTracking.startTracking('${ticket.trip_id}')">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600; color: var(--gray-800);">
-                                ${ticket.trip?.route_name || 'Route'}
-                            </div>
-                            <div style="font-size: 0.85rem; color: var(--gray-500);">
-                                Seat #${ticket.seat_number} • ${ticket.pickup_stop}
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right" style="color: var(--gray-400);"></i>
+    const list = document.getElementById('active-trips-list');
+    if (!list) return;
+    
+    try {
+        const trips = await API.passenger.getActiveTrips();
+        console.log("Active Trips received:", trips); // Debugging line
+
+        if (!trips || trips.length === 0) {
+            list.innerHTML = '<div class="empty-state">No active trips currently on the road.</div>';
+            return;
+        }
+
+        list.innerHTML = trips.map(trip => `
+            <div class="trip-track-item">
+                <div class="info">
+                    <div class="route">${trip.route_name}</div>
+                    <div class="bus-details">
+                        <i class="fas fa-bus"></i> ${trip.bus_plate} 
+                        <span class="time">${Utils.formatTime(trip.departure_time)}</span>
                     </div>
                 </div>
-            `).join('');
-            
-        } catch (error) {
-            console.error('Failed to load active trips:', error);
-        }
-    },
+                <button class="btn btn-sm btn-success" onclick="PassengerTracking.startTracking('${trip.id}')">
+                    Track Bus
+                </button>
+            </div>
+        `).join('');
+    } catch (error) {
+        list.innerHTML = '<div class="error">Error loading trips. Please try again.</div>';
+    }
+},
     
     async startTracking(tripId) {
         Utils.showLoading('Loading trip details...');

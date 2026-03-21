@@ -5,6 +5,7 @@ from sqlalchemy.orm import aliased
 from ..auth import jwt_required, roles_required
 from datetime import datetime, timedelta
 from ..schemas import TripSearchSchema, TripCreateSchema
+from ..models import Trip, Bus, Route
 from ..utils import validate_query, db_commit_or_rollback, validate_json
 
 
@@ -161,6 +162,35 @@ def get_all_trips():
 @trip_bp.route('/active', methods=['GET'])
 @jwt_required
 def get_active_trips():
-    # Fetch trips that haven't been completed or cancelled yet
-    active_trips = Trip.query.filter(Trip.status.in_(['scheduled', 'delayed'])).all()
-    return jsonify([t.to_dict() for t in active_trips]), 200
+    # We join with Bus and Route to get the readable names
+    active_trips = db.session.query(Trip, Bus, Route)\
+        .join(Bus, Trip.bus_id == Bus.id)\
+        .join(Route, Trip.route_id == Route.id)\
+        .filter(Trip.status.in_(['scheduled', 'delayed'])).all()
+    
+    results = []
+    for trip, bus, route in active_trips:
+        data = trip.to_dict()
+        data['bus_plate'] = bus.plate_number
+        data['route_name'] = route.name
+        results.append(data)
+        
+    return jsonify(results), 200
+
+
+
+
+@trip_bp.route('/<uuid:trip_id>', methods=['GET'])
+@jwt_required
+def get_single_trip(trip_id):
+    trip = Trip.query.get_or_404(trip_id)
+    bus = Bus.query.get(trip.bus_id)
+    route = Route.query.get(trip.route_id)
+    
+    data = trip.to_dict()
+    data['bus_plate'] = bus.plate_number
+    data['route_name'] = route.name
+    # Include itinerary for the map markers
+    data['itinerary'] = [s.to_dict() for s in route.stops] 
+    
+    return jsonify(data), 200
