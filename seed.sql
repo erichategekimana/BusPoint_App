@@ -43,7 +43,7 @@ INSERT INTO trips (id, bus_id, route_id, departure_time, status, current_capacit
 -- 7. BOOKINGS
 -- Eric books a seat from Remera to Nyabugogo
 INSERT INTO bookings (id, user_id, trip_id, status, pickup_stop_id, dropoff_stop_id, ticket_token) VALUES 
-('f0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', 'confirmed', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'TK-KGL-101-001');
+('f0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', 'A12', 'confirmed', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42', 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44', 'TK-KGL-101-001');
 
 -- 8. PAYMENTS
 -- Recording the 500 RWF MoMo payment

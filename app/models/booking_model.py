@@ -9,7 +9,7 @@ class Booking(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     trip_id = db.Column(UUID(as_uuid=True), db.ForeignKey('trips.id', ondelete='CASCADE'), nullable=False)
-    seat_number = db.Column(db.string(10), nullable=False)
+    seat_number = db.Column(db.String(10), nullable=False)
     status = db.Column(db.String(20), server_default='pending') # pending, confirmed, cancelled
     pickup_stop_id = db.Column(UUID(as_uuid=True), db.ForeignKey('stops.id'))
     dropoff_stop_id = db.Column(UUID(as_uuid=True), db.ForeignKey('stops.id'))
