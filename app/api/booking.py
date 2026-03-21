@@ -10,6 +10,7 @@ booking_bp =Blueprint('booking_api', __name__, url_prefix='/api')
 @booking_bp.route('/bookings', methods=['GET'])
 def get_bookings():
     bookings = Booking.query.all()
+
     return jsonify([b.to_dict() for b in bookings]), 200
 
  # create a new booking
@@ -31,3 +32,4 @@ def create_booking():
     db.session.commit()
 
     return jsonify({"message": "Booking created", "booking": new_booking.to_dict()}), 201
+

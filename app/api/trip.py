@@ -4,8 +4,8 @@ from app.models.trip_model import Trip
 trip_bp = Blueprint('trip_api', __name__, url_prefix='/api')
 
 @trip_bp.route('/trips', methods=['GET'])
-def list_trips():
+def get_trips():
     # Only show trips that are 'scheduled' or 'active'
-    trips = Trip.query.filter_by(status='scheduled').all()
+    trips = Trip.query.filter_by(status='scheduled').options()
 
     return jsonify([t.to_dict() for t in trips]), 200

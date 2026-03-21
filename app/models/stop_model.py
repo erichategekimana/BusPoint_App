@@ -1,5 +1,6 @@
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import deferred
 from geoalchemy2 import Geometry
 from datetime import datetime
 from app.database import db
@@ -16,7 +17,7 @@ class Stop(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # PostGIS Geography column
-    geom = db.Column(Geometry(geometry_type='POINT', srid=4326, spatial_index=True))
+    geom = deferred(db.Column(Geometry(geometry_type='POINT', srid=4326, spatial_index=True, from_text=True, name='geom')))
 
     # Relationships
     route_stops = db.relationship('RouteStop', back_populates='stop')
