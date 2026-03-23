@@ -71,7 +71,7 @@ const PassengerTracking = {
                     <div class="route">${trip.route_name}</div>
                     <div class="bus-details">
                         <i class="fas fa-bus"></i> ${trip.bus_plate} 
-                        <span class="time">${Utils.formatTime(trip.departure_time)}</span>
+                        <span class="time">${Utils.formatDateTime(trip.departure_time).time}</span>
                     </div>
                 </div>
                 <button class="btn btn-sm btn-success" onclick="PassengerTracking.startTracking('${trip.id}')">
@@ -190,37 +190,50 @@ const PassengerTracking = {
         }
     },
     
-    drawRoute() {
-        if (!this.currentTrip?.itinerary) return;
-        
-        const coordinates = this.currentTrip.itinerary.map(stop => {
-            // In real app, stops would have lat/lng
-            // For now, generate approximate coordinates around Kigali
-            return [
-                Config.MAP_CENTER[0] + (Math.random() - 0.5) * 0.1,
-                Config.MAP_CENTER[1] + (Math.random() - 0.5) * 0.1
-            ];
-        });
-        
-        if (this.routeLine) {
-            this.map.removeLayer(this.routeLine);
-        }
-        
-        this.routeLine = L.polyline(coordinates, {
-            color: '#2E7D32',
-            weight: 4,
-            opacity: 0.8,
-            dashArray: '10, 10'
-        }).addTo(this.map);
-        
-        // Add stop markers
-        coordinates.forEach((coord, index) => {
-            BusMap.addStopMarker(this.map, coord[0], coord[1], 
-                this.currentTrip.itinerary[index].stop_name, index + 1);
-        });
-        
+    // In tracking.js, update the drawRoute method:
+
+drawRoute() {
+    if (!this.currentTrip?.itinerary || this.currentTrip.itinerary.length === 0) {
+        console.log('No itinerary data available for drawing route');
+        return;
+    }
+    
+    // In a real app, stops would have lat/lng from the database
+    // For now, generate approximate coordinates around Kigali
+    const centerLat = Config.MAP_CENTER[0];
+    const centerLng = Config.MAP_CENTER[1];
+    
+    const coordinates = this.currentTrip.itinerary.map((stop, index) => {
+        // Spread stops in a rough circle around the center
+        const angle = (index / this.currentTrip.itinerary.length) * Math.PI * 2;
+        const radius = 0.03; // ~3km radius
+        return [
+            centerLat + (Math.cos(angle) * radius),
+            centerLng + (Math.sin(angle) * radius)
+        ];
+    });
+    
+    if (this.routeLine) {
+        this.map.removeLayer(this.routeLine);
+    }
+    
+    this.routeLine = L.polyline(coordinates, {
+        color: '#2E7D32',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '10, 10'
+    }).addTo(this.map);
+    
+    // Add stop markers
+    coordinates.forEach((coord, index) => {
+        BusMap.addStopMarker(this.map, coord[0], coord[1], 
+            this.currentTrip.itinerary[index].stop_name, index + 1);
+    });
+    
+    if (coordinates.length > 0) {
         this.map.fitBounds(this.routeLine.getBounds(), { padding: [50, 50] });
-    },
+    }
+},
     
     cleanup() {
         if (this.updateInterval) {

@@ -91,7 +91,7 @@ const API = {
         },
         
         getTripDetails(tripId) {
-            return API.request(`/trips/${tripId}`);
+            return API.request(`/trips/${tripId}/details`);
         },
         
         getActiveTrips() {
@@ -223,6 +223,16 @@ const API = {
                 method: 'PATCH',
                 body: { status }
             });
+        },
+
+        
+        getStats() {
+            return API.request('/admin/stats');
+        },
+        getRecentActivity(params = {}) {
+            const query = new URLSearchParams(params).toString();
+            const endpoint = query ? `/admin/recent-activity?${query}` : '/admin/recent-activity';
+            return API.request(endpoint);
         },
         
         // Notifications

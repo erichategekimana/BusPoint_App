@@ -577,6 +577,7 @@
     flex-direction: column;
     gap: 1.5rem;
     overflow-y: auto;
+    max-height: 100%;
 }
 
 .tracking-info {
@@ -693,4 +694,10 @@
     .tracking-map {
         height: 400px;
     }
+}
+
+
+.tracking-sidebar .card-body {
+    max-height: 400px; /* or calc(100vh - 300px) */
+    overflow-y: auto;
 }

@@ -5,6 +5,7 @@ const AdminDashboard = {
         todayBookings: 0,
         revenue: 0
     },
+    activities: [],
     
     async init() {
         await this.loadStats();
@@ -12,22 +13,13 @@ const AdminDashboard = {
     },
     
     async loadStats() {
-        // In real app, fetch from API
-        // For now, use mock data or calculate from existing data
         try {
-            const [trips, bookings] = await Promise.all([
-                API.admin.getTrips(),
-                API.passenger.getMyBookings() // Should be admin endpoint
-            ]);
-            
-            this.stats = {
-                totalUsers: 156, // Mock
-                activeTrips: trips.filter(t => t.status === 'scheduled').length,
-                todayBookings: bookings.length,
-                revenue: bookings.length * 500
-            };
+            const stats = await API.admin.getStats();
+            this.stats = stats;
+            const activities = await API.admin.getRecentActivity();
+            this.activities = activities;
         } catch (error) {
-            console.error('Failed to load stats:', error);
+            console.error('Failed to load admin stats:', error);
         }
     },
     
@@ -83,7 +75,7 @@ const AdminDashboard = {
                     <div class="card">
                         <div class="card-header">
                             <h3><i class="fas fa-chart-line"></i> Recent Activity</h3>
-                            <button class="btn btn-sm btn-outline">View All</button>
+                            <button class="btn btn-sm btn-outline" onclick="AdminDashboard.showAllActivities()">View All</button>
                         </div>
                         <div class="card-body">
                             <div class="activity-list">
@@ -101,6 +93,7 @@ const AdminDashboard = {
                                 <button class="btn btn-success" onclick="App.navigate('admin-trips')">
                                     <i class="fas fa-plus"></i> Create New Trip
                                 </button>
+                                <button class="btn btn-sm btn-outline" onclick="AdminDashboard.showAllActivities()">View All</button>
                                 <button class="btn btn-outline" onclick="App.navigate('admin-routes')">
                                     <i class="fas fa-route"></i> Manage Routes
                                 </button>
@@ -132,30 +125,64 @@ const AdminDashboard = {
     },
     
     renderActivityList() {
-        const activities = [
-            { type: 'booking', message: 'New booking #1234', time: '2 min ago', icon: 'ticket-alt', color: 'primary' },
-            { type: 'trip', message: 'Trip KMN-NYB started', time: '5 min ago', icon: 'bus', color: 'success' },
-            { type: 'user', message: 'New user registered', time: '10 min ago', icon: 'user', color: 'info' },
-            { type: 'payment', message: 'Payment received RWF 500', time: '15 min ago', icon: 'money-bill', color: 'warning' }
-        ];
-        
-        return activities.map(act => `
+        if (!this.activities || this.activities.length === 0) {
+            return '<div class="empty-state">No recent activity</div>';
+        }
+        return this.activities.map(act => `
             <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--gray-100);">
                 <div style="width: 40px; height: 40px; background: var(--${act.color}-lighter, var(--gray-100)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-${act.icon}" style="color: var(--${act.color}, var(--gray-600));"></i>
                 </div>
                 <div style="flex: 1;">
                     <div style="font-weight: 500; color: var(--gray-800);">${act.message}</div>
-                    <div style="font-size: 0.85rem; color: var(--gray-400);">${act.time}</div>
+                    <div style="font-size: 0.85rem; color: var(--gray-400);">${Utils.timeAgo(act.time)}</div>
                 </div>
             </div>
         `).join('');
     },
+
+
+
+        async showAllActivities() {
+        Utils.showLoading('Loading activities...');
+        try {
+            // Fetch more activities: limit 50, last 30 days
+            const allActivities = await API.admin.getRecentActivity({ limit: 50, days: 30 });
+            Utils.hideLoading();
+            this.renderAllActivitiesModal(allActivities);
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.toast('Failed to load activities', 'error');
+        }
+    },
+
+    renderAllActivitiesModal(activities) {
+        const modalContent = `
+            <div style="max-height: 60vh; overflow-y: auto;">
+                ${activities.length === 0 ? '<div class="empty-state">No activities found</div>' : 
+                    activities.map(act => `
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--gray-100);">
+                            <div style="width: 40px; height: 40px; background: var(--${act.color}-lighter, var(--gray-100)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-${act.icon}" style="color: var(--${act.color}, var(--gray-600));"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; color: var(--gray-800);">${act.message}</div>
+                                <div style="font-size: 0.85rem; color: var(--gray-400);">${Utils.timeAgo(act.time)}</div>
+                            </div>
+                        </div>
+                    `).join('')
+                }
+            </div>
+        `;
+        Utils.modal.open(modalContent, { title: 'Recent Activities' });
+    },
+
+
     
     initMap() {
         const map = BusMap.init('admin-map');
-        
-        // Add mock bus locations
+        // We can optionally fetch live bus locations from the API
+        // For now, keep mock or fetch from bus_locations table via a new endpoint
         const busLocations = [
             { lat: -1.9441, lng: 30.0619, plate: 'RAE 123A' },
             { lat: -1.9500, lng: 30.0700, plate: 'RAE 456B' },
@@ -166,6 +193,7 @@ const AdminDashboard = {
             BusMap.addBusMarker(map, bus.lat, bus.lng, bus.plate);
         });
     },
+
     
     sendNotification() {
         const modalContent = `

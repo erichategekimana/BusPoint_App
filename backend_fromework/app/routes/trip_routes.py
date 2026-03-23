@@ -1,3 +1,5 @@
+# In trip_routes.py, replace the entire file with this corrected version:
+
 from flask import Blueprint, jsonify, request, g
 from ..database import db
 from ..models import Trip, User, RouteStop, Stop
@@ -53,10 +55,8 @@ def search_trips(validated_data: TripSearchSchema):
     return jsonify([trip.to_dict() for trip in trips]), 200
 
 
-
-
 # This route is for getting detailed info about a specific trip, including the bus, route, and stops.
-@trip_bp.route('/<uuid:trip_id>', methods=['GET'])
+@trip_bp.route('/<uuid:trip_id>/details', methods=['GET'])
 def get_trip_details(trip_id):
     """
     Returns full info for a single trip.
@@ -68,6 +68,7 @@ def get_trip_details(trip_id):
     # 2. Build a detailed response
     data = trip.to_dict()
     data['route_name'] = trip.route.name
+    data['bus_plate'] = trip.bus.plate_number
     data['bus_details'] = {
         "plate": trip.bus.plate_number,
         "capacity": trip.bus.capacity
@@ -78,6 +79,7 @@ def get_trip_details(trip_id):
     data['itinerary'] = [
         {
             "stop_name": rs.stop.name,
+            "stop_id": str(rs.stop.id),
             "arrival_order": rs.stop_order,
             "minutes_from_start": rs.estimated_minutes_from_start
         } 
@@ -85,7 +87,6 @@ def get_trip_details(trip_id):
     ]
     
     return jsonify(data), 200
-
 
 
 @trip_bp.route('/', methods=['POST'])
@@ -132,6 +133,7 @@ def create_trip(validated_data: TripCreateSchema):
     db.session.refresh(new_trip)  # Refresh to get any defaults set by the database
     return jsonify({"message": "Trip scheduled successfully", "trip": new_trip.to_dict()}), 201
 
+
 @trip_bp.route('/<uuid:trip_id>/status', methods=['PATCH'])
 @jwt_required
 @roles_required('admin')
@@ -150,11 +152,10 @@ def update_trip_status(trip_id):
     return jsonify({"message": f"Trip status updated to {new_status}"}), 200
 
 
-
 @trip_bp.route('/', methods=['GET'])
 @jwt_required
 def get_all_trips():
-    """Returns all trips for admin/passenger lists."""
+    """Returns all trips for admin lists."""
     trips = Trip.query.all()
     return jsonify([trip.to_dict() for trip in trips]), 200
 
@@ -162,6 +163,7 @@ def get_all_trips():
 @trip_bp.route('/active', methods=['GET'])
 @jwt_required
 def get_active_trips():
+    """Returns active trips for passenger tracking with full itinerary."""
     # We join with Bus and Route to get the readable names
     active_trips = db.session.query(Trip, Bus, Route)\
         .join(Bus, Trip.bus_id == Bus.id)\
@@ -173,24 +175,32 @@ def get_active_trips():
         data = trip.to_dict()
         data['bus_plate'] = bus.plate_number
         data['route_name'] = route.name
+        # Add itinerary for tracking display
+        data['itinerary'] = [
+            {
+                "stop_name": rs.stop.name,
+                "stop_id": str(rs.stop.id),
+                "arrival_order": rs.stop_order,
+                "minutes_from_start": rs.estimated_minutes_from_start
+            } 
+            for rs in sorted(route.route_stops, key=lambda x: x.stop_order)
+        ]
         results.append(data)
         
     return jsonify(results), 200
 
 
-
-
+# Single trip endpoint - renamed to avoid conflict
 @trip_bp.route('/<uuid:trip_id>', methods=['GET'])
 @jwt_required
 def get_single_trip(trip_id):
+    """Get a single trip by ID (simple version without details)."""
     trip = Trip.query.get_or_404(trip_id)
     bus = Bus.query.get(trip.bus_id)
     route = Route.query.get(trip.route_id)
     
     data = trip.to_dict()
-    data['bus_plate'] = bus.plate_number
-    data['route_name'] = route.name
-    # Include itinerary for the map markers
-    data['itinerary'] = [s.to_dict() for s in route.stops] 
+    data['bus_plate'] = bus.plate_number if bus else 'Unknown'
+    data['route_name'] = route.name if route else 'Unknown'
     
     return jsonify(data), 200

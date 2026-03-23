@@ -32,6 +32,7 @@ def create_app():
     from app.routes.notification_routes import notification_bp
     from app.routes.payment_routes import payment_bp
     from app.routes.stop_routes import stop_bp 
+    from app.routes.admin_routes import admin_bp
 #    >
 #    >
 #    >
@@ -49,6 +50,7 @@ def create_app():
     app.register_blueprint(notification_bp, url_prefix='/api/notifications')
     app.register_blueprint(payment_bp, url_prefix='/api/payments')
     app.register_blueprint(stop_bp, url_prefix='/api/stops')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
 #    >
 #    >
 #    >
