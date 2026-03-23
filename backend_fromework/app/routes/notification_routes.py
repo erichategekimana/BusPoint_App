@@ -49,3 +49,40 @@ def send_manual_notification(validated_data: NotificationCreateSchema):
     )
     db.session.add(new_notif)
     return jsonify({"message": "Notification sent"}), 201
+
+
+
+
+@notification_bp.route('/admin/broadcast', methods=['POST'])
+@jwt_required
+@roles_required('admin')
+def broadcast_notification():
+    data = request.get_json()
+    target = data.get('target')  # 'all', 'passengers', 'drivers'
+    title = data.get('title')
+    message = data.get('message')
+    notif_type = data.get('notification_type', 'info')
+    
+    if not title or not message:
+        return jsonify({"error": "missing fields"}), 400
+    
+    # Determine users based on target
+    from ..models import User
+    query = User.query
+    if target == 'passengers':
+        query = query.filter(User.role == 'passenger')
+    elif target == 'drivers':
+        query = query.filter(User.role == 'driver')
+    # else 'all' includes everyone
+    
+    users = query.all()
+    for user in users:
+        notif = Notification(
+            user_id=user.id,
+            title=title,
+            message=message,
+            type=notif_type
+        )
+        db.session.add(notif)
+    db.session.commit()
+    return jsonify({"message": f"Notification sent to {len(users)} users"}), 201
