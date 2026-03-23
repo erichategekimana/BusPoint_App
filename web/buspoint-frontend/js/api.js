@@ -236,6 +236,15 @@ const API = {
         },
         
         // Notifications
+        broadcastNotification(data) {
+            return API.request('/notifications/admin/broadcast', {
+                method: 'POST',
+                body: data
+            });
+        },
+
+
+
         sendNotification(notificationData) {
             return API.request('/notifications/admin/send', {
                 method: 'POST',

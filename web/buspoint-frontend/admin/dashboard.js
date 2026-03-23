@@ -93,7 +93,6 @@ const AdminDashboard = {
                                 <button class="btn btn-success" onclick="App.navigate('admin-trips')">
                                     <i class="fas fa-plus"></i> Create New Trip
                                 </button>
-                                <button class="btn btn-sm btn-outline" onclick="AdminDashboard.showAllActivities()">View All</button>
                                 <button class="btn btn-outline" onclick="App.navigate('admin-routes')">
                                     <i class="fas fa-route"></i> Manage Routes
                                 </button>
@@ -236,29 +235,29 @@ const AdminDashboard = {
         const title = document.getElementById('notif-title').value;
         const message = document.getElementById('notif-message').value;
         const type = document.getElementById('notif-type').value;
-        
+
         if (!title || !message) {
             Utils.toast('Please fill in all fields', 'warning');
             return;
         }
-        
+
         Utils.showLoading('Sending...');
-        
+
         try {
-            // In real app, send to all target users
-            await API.admin.sendNotification({
-                user_id: 'all', // or specific user
-                title,
-                message,
+            await API.admin.broadcastNotification({
+                target: target,
+                title: title,
+                message: message,
                 notification_type: type
             });
-            
+
             Utils.hideLoading();
             Utils.modal.close();
             Utils.toast('Notification sent successfully', 'success');
-            
+
         } catch (error) {
             Utils.hideLoading();
+            Utils.toast('Failed to send notification', 'error');
         }
     }
 };

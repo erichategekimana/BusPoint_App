@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify, g, request
 from ..database import db
 from ..models import Notification
 from ..auth import jwt_required, roles_required
