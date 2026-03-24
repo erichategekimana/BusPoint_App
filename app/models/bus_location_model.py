@@ -15,7 +15,7 @@ class BusLocation(db.Model):
     longitude = db.Column(db.Numeric(11, 8), nullable=False)
     speed = db.Column(db.Numeric(5, 2), server_default='0.0')
     heading = db.Column(db.Numeric(5, 2))
-    captured_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    last_updated  = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
     # Relationship back to Bus
     bus = db.relationship('Bus', back_populates='location', uselist=False)

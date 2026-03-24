@@ -254,9 +254,14 @@ function openTripModal(tripId = null) {
     const modal = document.getElementById('driver-trip-modal');
     const title = document.getElementById('driver-trip-modal-title');
     const form = document.getElementById('driver-trip-form');
+    const statusGroup = document.getElementById('trip-form-status-group');
 
     form.reset();
     title.textContent = tripId ? 'Edit Trip' : 'Add Trip';
+
+    // Hide status dropdown when creating (auto-set to 'scheduled')
+    // Show it only when editing with valid transitions
+    statusGroup.style.display = tripId ? '' : 'none';
 
     // Load buses and routes, then optionally populate form fields
     Promise.all([
@@ -306,7 +311,25 @@ function populateTripForm(trip, buses, routes) {
     document.getElementById('trip-form-departure').value = toDatetimeLocal(trip.departure_time);
     document.getElementById('trip-form-arrival').value = trip.arrival_time ? toDatetimeLocal(trip.arrival_time) : '';
     document.getElementById('trip-form-capacity').value = trip.available_seats;
-    document.getElementById('trip-form-status').value = trip.status;
+
+    // Build status options based on valid transitions from current status
+    const statusSelect = document.getElementById('trip-form-status');
+    const transitions = {
+        scheduled:   ['scheduled', 'in_progress', 'cancelled'],
+        in_progress: ['in_progress', 'completed'],
+        completed:   ['completed'],
+        cancelled:   ['cancelled']
+    };
+    const labels = {
+        scheduled: 'Scheduled',
+        in_progress: 'In Progress',
+        completed: 'Completed',
+        cancelled: 'Cancelled'
+    };
+    const allowed = transitions[trip.status] || [trip.status];
+    statusSelect.innerHTML = allowed
+        .map(s => `<option value="${s}"${s === trip.status ? ' selected' : ''}>${labels[s]}</option>`)
+        .join('');
 }
 
 function toDatetimeLocal(iso) {
@@ -329,7 +352,6 @@ function saveTripForm(event) {
     const departure = document.getElementById('trip-form-departure').value;
     const arrival = document.getElementById('trip-form-arrival').value;
     const capacity = parseInt(document.getElementById('trip-form-capacity').value);
-    const status = document.getElementById('trip-form-status').value;
 
     if (!busId || !routeId || !departure || !capacity) {
         showNotification('Please fill in all required fields.', 'error');
@@ -342,7 +364,9 @@ function saveTripForm(event) {
         departure_time: new Date(departure).toISOString(),
         arrival_time: arrival ? new Date(arrival).toISOString() : null,
         current_capacity: capacity,
-        status: status
+        status: currentEditTripId
+            ? document.getElementById('trip-form-status').value
+            : 'scheduled'
     };
 
     const saveBtn = document.getElementById('trip-form-save-btn');
@@ -451,7 +475,7 @@ function refreshDriverBusMarkers() {
                         <p>Trip: ${loc.trip_id.slice(0, 8)}…</p>
                         <p>Speed: ${loc.speed != null ? loc.speed + ' km/h' : '—'}</p>
                         <p>Heading: ${loc.heading != null ? loc.heading + '°' : '—'}</p>
-                        <small>Updated: ${loc.captured_at ? new Date(loc.captured_at).toLocaleTimeString() : '—'}</small>
+                        <small>Updated: ${loc.last_updated  ? new Date(loc.last_updated ).toLocaleTimeString() : '—'}</small>
                     </div>
                 `);
 

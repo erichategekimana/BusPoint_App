@@ -32,6 +32,23 @@ class APIService {
                 throw new Error(`Server returned non-JSON response: ${text}`);
             }
 
+            if (response.status === 401 && authToken) {
+                // Token expired or invalid — auto-logout
+                authToken = null;
+                currentUser = null;
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.AUTH_TOKEN);
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_DATA);
+
+                document.getElementById('passenger-dashboard')?.classList.remove('active');
+                document.getElementById('driver-dashboard')?.classList.remove('active');
+                document.getElementById('loginForm')?.reset();
+                document.getElementById('registerForm')?.reset();
+                document.getElementById('auth-section')?.classList.remove('hidden');
+
+                showNotification('Session expired. Please sign in again.', 'error');
+                throw new Error('Session expired');
+            }
+
             if (!response.ok) {
                 const message = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
                 throw new Error(message);

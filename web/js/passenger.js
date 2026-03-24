@@ -104,7 +104,7 @@ function refreshBusLocations() {
                 const id = loc.bus_id;
                 seen.add(id);
                 const lngLat = [parseFloat(loc.longitude), parseFloat(loc.latitude)];
-                const updatedAt = loc.captured_at || loc.last_updated || new Date().toISOString();
+                const updatedAt = loc.last_updated  || loc.last_updated || new Date().toISOString();
                 const popupHtml = `
                     <div style="padding:8px;min-width:140px">
                         <strong><i class="fas fa-bus"></i> Live Bus</strong><br>

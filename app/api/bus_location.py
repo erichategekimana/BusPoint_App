@@ -56,7 +56,7 @@ def bus_location_to_dict(location: BusLocation) -> dict:
         "longitude": float(location.longitude),
         "speed": float(location.speed) if location.speed is not None else None,
         "heading": float(location.heading) if location.heading is not None else None,
-        "captured_at": location.captured_at.isoformat() if location.captured_at else None,
+        "last_updated ": location.last_updated .isoformat() if location.last_updated  else None,
     }
 
 
@@ -80,7 +80,7 @@ def list_bus_locations():
             return error
         query = query.filter(BusLocation.trip_id == trip_uuid)
 
-    locations = query.order_by(BusLocation.captured_at.desc()).all()
+    locations = query.order_by(BusLocation.last_updated .desc()).all()
     return jsonify([bus_location_to_dict(loc) for loc in locations]), 200
 
 

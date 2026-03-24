@@ -424,13 +424,9 @@
                         <label>Available Seats <span style="color:#FF3B30">*</span></label>
                         <input type="number" id="trip-form-capacity" min="1" placeholder="e.g. 30" required>
                     </div>
-                    <div class="form-group">
+                    <div id="trip-form-status-group" class="form-group" style="display:none">
                         <label>Status</label>
                         <select id="trip-form-status">
-                            <option value="scheduled">Scheduled</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
                     <button type="submit" id="trip-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">

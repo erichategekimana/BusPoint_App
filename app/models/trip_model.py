@@ -20,8 +20,8 @@ class Trip(db.Model):
     bus = db.relationship('Bus', back_populates='trips')
     route = db.relationship('Route', back_populates='trips')
     driver = db.relationship('User', foreign_keys=[driver_id])
-    bookings = db.relationship('Booking', back_populates='trip')
-    locations = db.relationship('BusLocation', back_populates='trip', lazy=True)
+    bookings = db.relationship('Booking', back_populates='trip', cascade='all, delete-orphan', passive_deletes=True)
+    locations = db.relationship('BusLocation', back_populates='trip', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
 
 
     def to_dict(self):
