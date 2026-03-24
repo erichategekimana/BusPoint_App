@@ -77,7 +77,7 @@
                         <select id="registerRole" required>
                             <option value="">Select Role</option>
                             <option value="passenger">Passenger</option>
-                            <option value="driver">Driver</option>
+                            <option value="admin">Admin</option>
                         </select>
                         <i class="fas fa-user-tag"></i>
                     </div>
@@ -225,44 +225,44 @@
         </div>
     </div>
 
-    <!-- Driver Dashboard -->
-    <div id="driver-dashboard" class="dashboard">
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="dashboard">
         <!-- Navigation -->
         <nav class="navbar">
             <div class="nav-brand">
                 <i class="fas fa-bus"></i>
-                <span>Bus Point Driver</span>
+                <span>Bus Point Admin</span>
             </div>
             <div class="nav-menu">
-                <a href="#" onclick="showDriverSection('trips')" class="nav-item active">
+                <a href="#" onclick="showAdminSection('trips')" class="nav-item active">
                     <i class="fas fa-route"></i>
                     <span>Today's Trips</span>
                 </a>
-                <a href="#" onclick="showDriverSection('buses')" class="nav-item">
+                <a href="#" onclick="showAdminSection('buses')" class="nav-item">
                     <i class="fas fa-bus"></i>
                     <span>Buses</span>
                 </a>
-                <a href="#" onclick="showDriverSection('scanner')" class="nav-item">
+                <a href="#" onclick="showAdminSection('scanner')" class="nav-item">
                     <i class="fas fa-qrcode"></i>
                     <span>QR Scanner</span>
                 </a>
-                <a href="#" onclick="showDriverSection('gps')" class="nav-item">
+                <a href="#" onclick="showAdminSection('gps')" class="nav-item">
                     <i class="fas fa-map-marker-alt"></i>
                     <span>GPS Tracking</span>
                 </a>
             </div>
             <div class="nav-user">
                 <div class="user-info">
-                    <span id="driverName">Driver Name</span>
-                    <small>Driver</small>
+                    <span id="adminName">Admin</span>
+                    <small>Admin</small>
                 </div>
                 <button onclick="logout()" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </nav>
-        <!-- Driver Trips Section -->
-        <div id="driver-trips" class="section active">
+        <!-- Admin Trips Section -->
+        <div id="admin-trips" class="section active">
             <div class="section-header">
                 <h2>Today's Trips</h2>
                 <p>Manage your assigned trips</p>
@@ -275,8 +275,8 @@
             </div>
         </div>
 
-        <!-- Driver Buses Section -->
-        <div id="driver-buses" class="section">
+        <!-- Admin Buses Section -->
+        <div id="admin-buses" class="section">
             <div class="section-header">
                 <h2>My Buses</h2>
                 <p>Buses assigned to you</p>
@@ -289,8 +289,8 @@
             </div>
         </div>
 
-        <!-- Driver Scanner Section -->
-        <div id="driver-scanner" class="section">
+        <!-- Admin Scanner Section -->
+        <div id="admin-scanner" class="section">
             <div class="section-header">
                 <h2>QR Code Scanner</h2>
                 <p>Scan passenger tickets</p>
@@ -318,8 +318,8 @@
             </div>
         </div>
 
-        <!-- Driver GPS Section -->
-        <div id="driver-gps" class="section">
+        <!-- Admin GPS Section -->
+        <div id="admin-gps" class="section">
             <div class="section-header">
                 <h2>GPS Tracking</h2>
                 <p>Broadcast your location and see all buses on the map</p>
@@ -335,12 +335,12 @@
 
             <!-- Live map -->
             <div class="map-container" style="margin-bottom:16px">
-                <div id="driver-map" class="map"></div>
+                <div id="admin-map" class="map"></div>
                 <div class="map-controls">
-                    <button onclick="centerDriverMap()" class="map-btn" title="Center map">
+                    <button onclick="centerAdminMap()" class="map-btn" title="Center map">
                         <i class="fas fa-crosshairs"></i>
                     </button>
-                    <button onclick="refreshDriverBusMarkers()" class="map-btn" title="Refresh bus locations">
+                    <button onclick="refreshAdminBusMarkers()" class="map-btn" title="Refresh bus locations">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -389,17 +389,17 @@
         </div>
     </div>
 
-    <!-- Driver Trip Modal (Add / Edit) -->
-    <div id="driver-trip-modal" class="modal">
+    <!-- Admin Trip Modal (Add / Edit) -->
+    <div id="admin-trip-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="driver-trip-modal-title">Add Trip</h3>
+                <h3 id="admin-trip-modal-title">Add Trip</h3>
                 <button onclick="closeTripModal()" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="driver-trip-form">
+                <form id="admin-trip-form">
                     <div class="form-group">
                         <label>Bus <span style="color:#FF3B30">*</span></label>
                         <select id="trip-form-bus" required>
@@ -437,17 +437,17 @@
         </div>
     </div>
 
-    <!-- Driver Bus Modal (Add / Edit) -->
-    <div id="driver-bus-modal" class="modal">
+    <!-- Admin Bus Modal (Add / Edit) -->
+    <div id="admin-bus-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="driver-bus-modal-title">Add Bus</h3>
+                <h3 id="admin-bus-modal-title">Add Bus</h3>
                 <button onclick="closeBusModal()" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="driver-bus-form">
+                <form id="admin-bus-form">
                     <div class="form-group">
                         <label>Plate Number <span style="color:#FF3B30">*</span></label>
                         <input type="text" id="bus-form-plate" placeholder="e.g. RAB 123A" required>
@@ -584,7 +584,7 @@
     <script src="js/connection-status.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/passenger.js"></script>
-    <script src="js/driver.js"></script>
+    <script src="js/admin.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

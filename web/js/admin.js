@@ -1,43 +1,43 @@
-// Driver Dashboard Logic
-let driverMap = null;
-let driverSelfMarker = null;
-let driverBusMarkers = [];
+// Admin Dashboard Logic
+let adminMap = null;
+let adminSelfMarker = null;
+let adminBusMarkers = [];
 // let gpsWatchId = null;
 // let isGPSTracking = false;
 let currentGPSLocationId = null;   // id of the BusLocation record we're PATCHing
 let currentEditTripId = null;      // null = new, string = editing
 let currentEditBusId = null;       // null = new, string = editing
-let driverTrips = [];
-let driverBusList = [];
-let driverRouteList = [];
+let adminTrips = [];
+let adminBusList = [];
+let adminRouteList = [];
 
 // ── Dashboard entry ─────────────────────────────────────────────────────────
 
-function showDriverDashboard() {
+function showAdminDashboard() {
     document.getElementById('auth-section').classList.add('hidden');
-    document.getElementById('driver-dashboard').classList.add('active');
+    document.getElementById('admin-dashboard').classList.add('active');
     document.getElementById('passenger-dashboard').classList.remove('active');
 
-    document.getElementById('driverName').textContent = currentUser.full_name;
+    document.getElementById('adminName').textContent = currentUser.full_name;
 
     loadTodayTrips();
-    showDriverSection('trips');
+    showAdminSection('trips');
 }
 
-function showDriverSection(section) {
+function showAdminSection(section) {
     document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-    document.getElementById(`driver-${section}`).classList.add('active');
+    document.getElementById(`admin-${section}`).classList.add('active');
 
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    const activeNav = document.querySelector(`[onclick="showDriverSection('${section}')"]`);
+    const activeNav = document.querySelector(`[onclick="showAdminSection('${section}')"]`);
     if (activeNav) activeNav.classList.add('active');
 
     if (section === 'gps') {
         populateGPSTripSelect();
-        initDriverGPSMap();
+        initAdminGPSMap();
     }
     if (section === 'buses') {
-        loadDriverBuses();
+        loadAdminBuses();
     }
 }
 
@@ -47,9 +47,9 @@ function loadTodayTrips() {
     const container = document.getElementById('trips-list');
     container.innerHTML = '<div class="text-center">Loading trips…</div>';
 
-    api.getTrips({ driver_id: currentUser.id })
+    api.getTrips({ assigned_to: currentUser.id })
         .then(trips => {
-            driverTrips = trips;
+            adminTrips = trips;
             renderTripsList(trips);
         })
         .catch(err => {
@@ -111,7 +111,7 @@ function formatDateTime(iso) {
 
 // ── MY BUSES ─────────────────────────────────────────────────────────────────
 
-function loadDriverBuses() {
+function loadAdminBuses() {
     const container = document.getElementById('buses-list');
     container.innerHTML = '<div class="text-center">Loading buses…</div>';
 
@@ -162,15 +162,15 @@ function loadDriverBuses() {
 
 function openBusModal(busId = null) {
     currentEditBusId = busId;
-    const modal = document.getElementById('driver-bus-modal');
-    const title = document.getElementById('driver-bus-modal-title');
-    const form = document.getElementById('driver-bus-form');
+    const modal = document.getElementById('admin-bus-modal');
+    const title = document.getElementById('admin-bus-modal-title');
+    const form = document.getElementById('admin-bus-form');
 
     form.reset();
     title.textContent = busId ? 'Edit Bus' : 'Add Bus';
 
     if (busId) {
-        const bus = driverBusList.find(b => b.id === busId);
+        const bus = adminBusList.find(b => b.id === busId);
         if (bus) {
             document.getElementById('bus-form-plate').value = bus.plate_number || '';
             document.getElementById('bus-form-type').value = bus.bus_type || '';
@@ -184,7 +184,7 @@ function openBusModal(busId = null) {
 }
 
 function closeBusModal() {
-    document.getElementById('driver-bus-modal').classList.remove('active');
+    document.getElementById('admin-bus-modal').classList.remove('active');
     currentEditBusId = null;
 }
 
@@ -223,8 +223,8 @@ function saveBusForm(event) {
         .then(() => {
             showNotification(currentEditBusId ? 'Bus updated.' : 'Bus added.', 'success');
             closeBusModal();
-            driverBusList = [];   // clear cache so next load is fresh
-            loadDriverBuses();
+            adminBusList = [];   // clear cache so next load is fresh
+            loadAdminBuses();
         })
         .catch(err => {
             showNotification('Error: ' + err.message, 'error');
@@ -241,8 +241,8 @@ function confirmDeleteBus(busId) {
     api.deleteBus(busId)
         .then(() => {
             showNotification('Bus deleted.', 'success');
-            driverBusList = [];   // clear cache
-            loadDriverBuses();
+            adminBusList = [];   // clear cache
+            loadAdminBuses();
         })
         .catch(err => showNotification('Error: ' + err.message, 'error'));
 }
@@ -251,9 +251,9 @@ function confirmDeleteBus(busId) {
 
 function openTripModal(tripId = null) {
     currentEditTripId = tripId;
-    const modal = document.getElementById('driver-trip-modal');
-    const title = document.getElementById('driver-trip-modal-title');
-    const form = document.getElementById('driver-trip-form');
+    const modal = document.getElementById('admin-trip-modal');
+    const title = document.getElementById('admin-trip-modal-title');
+    const form = document.getElementById('admin-trip-form');
     const statusGroup = document.getElementById('trip-form-status-group');
 
     form.reset();
@@ -265,11 +265,11 @@ function openTripModal(tripId = null) {
 
     // Load buses and routes, then optionally populate form fields
     Promise.all([
-        driverBusList.length ? Promise.resolve(driverBusList) : api.getBuses({ is_active: 'true' }),
-        driverRouteList.length ? Promise.resolve(driverRouteList) : api.getRoutes({ is_active: 'true' })
+        adminBusList.length ? Promise.resolve(adminBusList) : api.getBuses({ is_active: 'true' }),
+        adminRouteList.length ? Promise.resolve(adminRouteList) : api.getRoutes({ is_active: 'true' })
     ]).then(([buses, routes]) => {
-        driverBusList = buses;
-        driverRouteList = routes;
+        adminBusList = buses;
+        adminRouteList = routes;
 
         const busSelect = document.getElementById('trip-form-bus');
         const routeSelect = document.getElementById('trip-form-route');
@@ -288,7 +288,7 @@ function openTripModal(tripId = null) {
             routes.map(r => `<option value="${r.id}">${r.route_code} — ${r.name}</option>`).join('');
 
         if (tripId) {
-            const trip = driverTrips.find(t => t.id === tripId);
+            const trip = adminTrips.find(t => t.id === tripId);
             if (trip) {
                 populateTripForm(trip, managedBuses, routes);
             }
@@ -340,7 +340,7 @@ function toDatetimeLocal(iso) {
 }
 
 function closeTripModal() {
-    document.getElementById('driver-trip-modal').classList.remove('active');
+    document.getElementById('admin-trip-modal').classList.remove('active');
     currentEditTripId = null;
 }
 
@@ -411,7 +411,7 @@ function populateGPSTripSelect() {
 
     const current = select.value;
     select.innerHTML = '<option value="">— Select your active trip —</option>' +
-        driverTrips
+        adminTrips
             .filter(t => t.status !== 'completed' && t.status !== 'cancelled')
             .map(t => `<option value="${t.id}" data-bus-plate="${t.bus_plate}">${t.route_name} · ${formatDateTime(t.departure_time)}</option>`)
             .join('');
@@ -419,14 +419,14 @@ function populateGPSTripSelect() {
     if (current) select.value = current;
 }
 
-function initDriverGPSMap() {
-    if (driverMap) {
-        refreshDriverBusMarkers();
+function initAdminGPSMap() {
+    if (adminMap) {
+        refreshAdminBusMarkers();
         return;
     }
 
     if (!window.maplibregl) {
-        const container = document.getElementById('driver-map');
+        const container = document.getElementById('admin-map');
         if (container) container.innerHTML = '<div class="text-center">Map unavailable (MapLibre not loaded).</div>';
         return;
     }
@@ -435,30 +435,30 @@ function initDriverGPSMap() {
         ? buildStadiaStyleUrl()
         : (CONFIG.MAP_STYLE_URL || 'https://tiles.stadiamaps.com/styles/alidade_smooth.json');
 
-    driverMap = new maplibregl.Map({
-        container: 'driver-map',
+    adminMap = new maplibregl.Map({
+        container: 'admin-map',
         style: styleUrl,
         center: CONFIG.DEFAULT_CENTER,
         zoom: CONFIG.DEFAULT_ZOOM
     });
 
-    driverMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+    adminMap.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-    driverMap.on('load', () => {
-        refreshDriverBusMarkers();
+    adminMap.on('load', () => {
+        refreshAdminBusMarkers();
     });
 }
 
-function centerDriverMap() {
-    if (!driverMap) return;
-    driverMap.flyTo({ center: CONFIG.DEFAULT_CENTER, zoom: CONFIG.DEFAULT_ZOOM, essential: true });
+function centerAdminMap() {
+    if (!adminMap) return;
+    adminMap.flyTo({ center: CONFIG.DEFAULT_CENTER, zoom: CONFIG.DEFAULT_ZOOM, essential: true });
 }
 
-function refreshDriverBusMarkers() {
-    if (!driverMap) return;
+function refreshAdminBusMarkers() {
+    if (!adminMap) return;
 
-    driverBusMarkers.forEach(m => m.remove());
-    driverBusMarkers = [];
+    adminBusMarkers.forEach(m => m.remove());
+    adminBusMarkers = [];
 
     api.getBusLocations()
         .then(locations => {
@@ -482,9 +482,9 @@ function refreshDriverBusMarkers() {
                 const marker = new maplibregl.Marker(el)
                     .setLngLat([parseFloat(loc.longitude), parseFloat(loc.latitude)])
                     .setPopup(popup)
-                    .addTo(driverMap);
+                    .addTo(adminMap);
 
-                driverBusMarkers.push(marker);
+                adminBusMarkers.push(marker);
             });
         })
         .catch(() => { /* silent fail — map still works without locations */ });
@@ -530,8 +530,8 @@ function startGPSTracking() {
             if (spdEl) spdEl.textContent = speedKmh != null ? `${speedKmh} km/h` : '— km/h';
             if (updEl) updEl.textContent = new Date().toLocaleTimeString();
 
-            // Move or create driver's own marker on the map
-            updateDriverSelfMarker(latitude, longitude);
+            // Move or create admin's own marker on the map
+            updateAdminSelfMarker(latitude, longitude);
 
             // Push location to the API
             pushLocationToAPI(tripId, latitude, longitude, speedKmh, heading);
@@ -569,32 +569,32 @@ function stopGPSTracking() {
     if (updEl) updEl.textContent = '--';
 }
 
-function updateDriverSelfMarker(lat, lng) {
-    if (!driverMap) return;
+function updateAdminSelfMarker(lat, lng) {
+    if (!adminMap) return;
 
-    if (!driverSelfMarker) {
+    if (!adminSelfMarker) {
         const el = document.createElement('div');
-        el.className = 'bus-marker driver-self-marker';
+        el.className = 'bus-marker admin-self-marker';
         el.innerHTML = '<i class="fas fa-user"></i>';
         el.title = 'Your location';
 
-        driverSelfMarker = new maplibregl.Marker(el)
+        adminSelfMarker = new maplibregl.Marker(el)
             .setLngLat([lng, lat])
-            .addTo(driverMap);
+            .addTo(adminMap);
     } else {
-        driverSelfMarker.setLngLat([lng, lat]);
+        adminSelfMarker.setLngLat([lng, lat]);
     }
 
-    // Pan map to keep driver in view
-    driverMap.easeTo({ center: [lng, lat], duration: 500 });
+    // Pan map to keep admin in view
+    adminMap.easeTo({ center: [lng, lat], duration: 500 });
 }
 
 function pushLocationToAPI(tripId, lat, lng, speed, heading) {
-    const trip = driverTrips.find(t => t.id === tripId);
+    const trip = adminTrips.find(t => t.id === tripId);
     if (!trip) return;
 
     // Find the bus_id by matching the bus plate from the trip
-    const bus = driverBusList.find(b => b.plate_number === trip.bus_plate);
+    const bus = adminBusList.find(b => b.plate_number === trip.bus_plate);
     if (!bus) return;
 
     const payload = {
@@ -698,9 +698,9 @@ function markBoarded() {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-    const tripForm = document.getElementById('driver-trip-form');
+    const tripForm = document.getElementById('admin-trip-form');
     if (tripForm) tripForm.addEventListener('submit', saveTripForm);
 
-    const busForm = document.getElementById('driver-bus-form');
+    const busForm = document.getElementById('admin-bus-form');
     if (busForm) busForm.addEventListener('submit', saveBusForm);
 });

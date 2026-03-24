@@ -63,7 +63,7 @@ def get_bus(bus_id: str):
 
 @bus_bp.post("/buses")
 @jwt_required()
-@role_required("driver")
+@role_required("admin")
 def create_bus():
     payload = request.get_json(silent=True) or {}
     validated, error = validate_payload(BusCreateRequest, payload)

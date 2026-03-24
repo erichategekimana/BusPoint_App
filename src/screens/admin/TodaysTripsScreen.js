@@ -24,7 +24,7 @@ export default function TodaysTripsScreen({ navigation }) {
   const fetchTrips = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/trips/driver/${user.id}?date=today`);
+      const response = await api.get(`/trips?assigned_to=${user.id}`);
       setTrips(response.data);
     } catch (error) {
       console.error('Failed to fetch trips:', error);

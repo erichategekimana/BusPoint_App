@@ -2,10 +2,10 @@
 \c buspoint_db;
 
 -- 1. USERS
--- Inserting a passenger and a driver
-INSERT INTO users (id, full_name, phone_number, email, password_hash, role) VALUES 
+-- Inserting a passenger and an admin
+INSERT INTO users (id, full_name, phone_number, email, password_hash, role) VALUES
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Eric Munyaneza', '0788123001', 'eric.m@example.com', 'hash123', 'passenger'),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Alice Umutoni', '0788123002', 'alice.u@example.com', 'hash456', 'driver');
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Alice Umutoni', '0788123002', 'alice.u@example.com', 'hash456', 'admin');
 
 -- 2. BUSES
 -- Adding a Coaster and a large Yutong bus

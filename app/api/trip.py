@@ -19,7 +19,7 @@ class TripCreateRequest(BaseModel):
     route_id: UUID
     departure_time: datetime
     current_capacity: int = Field(ge=0)
-    driver_id: UUID | None = None
+    assigned_to: UUID | None = None
     arrival_time: datetime | None = None
     status: str | None = None
 
@@ -27,7 +27,7 @@ class TripCreateRequest(BaseModel):
 class TripUpdateRequest(BaseModel):
     bus_id: UUID | None = None
     route_id: UUID | None = None
-    driver_id: UUID | None = None
+    assigned_to: UUID | None = None
     departure_time: datetime | None = None
     arrival_time: datetime | None = None
     status: str | None = None
@@ -58,7 +58,7 @@ def validate_payload(schema, payload: dict):
 def list_trips():
     bus_id = request.args.get("bus_id")
     route_id = request.args.get("route_id")
-    driver_id = request.args.get("driver_id")
+    assigned_to = request.args.get("assigned_to")
     status = request.args.get("status")
 
     query = Trip.query
@@ -72,11 +72,11 @@ def list_trips():
         if error:
             return error
         query = query.filter(Trip.route_id == route_uuid)
-    if driver_id:
-        driver_uuid, error = parse_uuid(driver_id, "driver_id")
+    if assigned_to:
+        assigned_uuid, error = parse_uuid(assigned_to, "assigned_to")
         if error:
             return error
-        query = query.filter(Trip.driver_id == driver_uuid)
+        query = query.filter(Trip.assigned_to == assigned_uuid)
     if status:
         query = query.filter(Trip.status == status)
 
@@ -103,7 +103,7 @@ def create_trip():
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role not in ("admin", "driver"):
+    if role != "admin":
         return jsonify({"error": "forbidden"}), 403
 
     payload = request.get_json(silent=True) or {}
@@ -116,25 +116,23 @@ def create_trip():
     if not db.session.get(Route, validated.route_id):
         return jsonify({"error": "route_not_found"}), 404
 
-    # Drivers are always assigned to themselves; admins may assign any driver
-    if role == "driver":
-        effective_driver_id = UUID(current_user.get("user_id"))
-    elif validated.driver_id:
-        driver = db.session.get(User, validated.driver_id)
-        if not driver:
-            return jsonify({"error": "driver_not_found"}), 404
-        if driver.role != "driver":
-            return jsonify({"error": "user_is_not_a_driver"}), 422
-        effective_driver_id = validated.driver_id
+    # Admin is auto-assigned; can optionally assign another admin
+    if validated.assigned_to:
+        target_user = db.session.get(User, validated.assigned_to)
+        if not target_user:
+            return jsonify({"error": "user_not_found"}), 404
+        if target_user.role != "admin":
+            return jsonify({"error": "user_is_not_an_admin"}), 422
+        effective_assigned_to = validated.assigned_to
     else:
-        effective_driver_id = None
+        effective_assigned_to = UUID(current_user.get("user_id"))
 
     trip = Trip(
         bus_id=validated.bus_id,
         route_id=validated.route_id,
         departure_time=validated.departure_time,
         current_capacity=validated.current_capacity,
-        driver_id=effective_driver_id,
+        assigned_to=effective_assigned_to,
     )
     if validated.arrival_time is not None:
         trip.arrival_time = validated.arrival_time
@@ -152,7 +150,7 @@ def update_trip(trip_id: str):
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role not in ("admin", "driver"):
+    if role != "admin":
         return jsonify({"error": "forbidden"}), 403
 
     trip_uuid, error = parse_uuid(trip_id, "trip_id")
@@ -162,8 +160,8 @@ def update_trip(trip_id: str):
     if not trip:
         return jsonify({"error": "trip_not_found"}), 404
 
-    # Driver can only edit their own assigned trip
-    if role == "driver" and str(trip.driver_id) != current_user.get("user_id"):
+    # Admin can only edit their own assigned trip
+    if str(trip.assigned_to) != current_user.get("user_id"):
         return jsonify({"error": "forbidden"}), 403
 
     payload = request.get_json(silent=True) or {}
@@ -175,20 +173,19 @@ def update_trip(trip_id: str):
         return jsonify({"error": "bus_not_found"}), 404
     if validated.route_id and not db.session.get(Route, validated.route_id):
         return jsonify({"error": "route_not_found"}), 404
-    if validated.driver_id:
-        driver = db.session.get(User, validated.driver_id)
-        if not driver:
-            return jsonify({"error": "driver_not_found"}), 404
-        if driver.role != "driver":
-            return jsonify({"error": "user_is_not_a_driver"}), 422
+    if validated.assigned_to:
+        target_user = db.session.get(User, validated.assigned_to)
+        if not target_user:
+            return jsonify({"error": "user_not_found"}), 404
+        if target_user.role != "admin":
+            return jsonify({"error": "user_is_not_an_admin"}), 422
 
     if validated.bus_id is not None:
         trip.bus_id = validated.bus_id
     if validated.route_id is not None:
         trip.route_id = validated.route_id
-    # Drivers cannot reassign themselves to another driver_id
-    if validated.driver_id is not None and role == "admin":
-        trip.driver_id = validated.driver_id
+    if validated.assigned_to is not None:
+        trip.assigned_to = validated.assigned_to
     if validated.departure_time is not None:
         trip.departure_time = validated.departure_time
     if validated.arrival_time is not None:
@@ -208,7 +205,7 @@ def delete_trip(trip_id: str):
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role not in ("admin", "driver"):
+    if role != "admin":
         return jsonify({"error": "forbidden"}), 403
 
     trip_uuid, error = parse_uuid(trip_id, "trip_id")
@@ -218,8 +215,8 @@ def delete_trip(trip_id: str):
     if not trip:
         return jsonify({"error": "trip_not_found"}), 404
 
-    # Drivers can only delete their own trip
-    if role == "driver" and str(trip.driver_id) != current_user.get("user_id"):
+    # Admin can only delete their own trip
+    if str(trip.assigned_to) != current_user.get("user_id"):
         return jsonify({"error": "forbidden"}), 403
 
     db.session.delete(trip)

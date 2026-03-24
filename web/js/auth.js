@@ -18,8 +18,8 @@ function checkAuth() {
         // Show appropriate dashboard
         if (currentUser.role === 'passenger') {
             showPassengerDashboard();
-        } else if (currentUser.role === 'driver') {
-            showDriverDashboard();
+        } else if (currentUser.role === 'admin') {
+            showAdminDashboard();
         }
     } else {
         // Hide loading screen
@@ -70,8 +70,8 @@ function setupAuthForms() {
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
-            } else if (currentUser.role === 'driver') {
-                showDriverDashboard();
+            } else if (currentUser.role === 'admin') {
+                showAdminDashboard();
             }
 
             // Show success message
@@ -149,8 +149,8 @@ function setupAuthForms() {
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
-            } else if (currentUser.role === 'driver') {
-                showDriverDashboard();
+            } else if (currentUser.role === 'admin') {
+                showAdminDashboard();
             }
 
             showNotification('Registration successful! Welcome to Bus Point!', 'success');
@@ -180,7 +180,7 @@ function logout() {
     
     // Hide dashboards
     document.getElementById('passenger-dashboard').classList.remove('active');
-    document.getElementById('driver-dashboard').classList.remove('active');
+    document.getElementById('admin-dashboard').classList.remove('active');
 
     // Clear any leftover form data and show login
     document.getElementById('loginForm').reset();

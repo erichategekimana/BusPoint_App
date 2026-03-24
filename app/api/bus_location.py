@@ -95,7 +95,7 @@ def get_bus_location(location_id: str):
     return jsonify(bus_location_to_dict(location)), 200
 
 
-# ── WRITE endpoints — driver (own trip) or admin ────────────────────────────
+# ── WRITE endpoints — admin only ─────────────────────────────────────────────
 
 @bus_location_bp.post("/bus-locations")
 @jwt_required()
@@ -103,7 +103,7 @@ def create_bus_location():
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role not in ("admin", "driver"):
+    if role != "admin":
         return jsonify({"error": "forbidden"}), 403
 
     payload = request.get_json(silent=True) or {}
@@ -118,8 +118,8 @@ def create_bus_location():
     if not trip:
         return jsonify({"error": "trip_not_found"}), 404
 
-    # Driver can only post location for a trip they are assigned to
-    if role == "driver" and str(trip.driver_id) != current_user.get("user_id"):
+    # Admin can only post location for a trip they are assigned to
+    if str(trip.assigned_to) != current_user.get("user_id"):
         return jsonify({"error": "forbidden"}), 403
 
     location = BusLocation(
@@ -144,7 +144,7 @@ def update_bus_location(location_id: str):
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role not in ("admin", "driver"):
+    if role != "admin":
         return jsonify({"error": "forbidden"}), 403
 
     location_uuid, error = parse_uuid(location_id, "location_id")
@@ -154,10 +154,9 @@ def update_bus_location(location_id: str):
     if not location:
         return jsonify({"error": "bus_location_not_found"}), 404
 
-    # Driver can only update a location record that belongs to their trip
-    if role == "driver":
-        trip = db.session.get(Trip, location.trip_id)
-        if not trip or str(trip.driver_id) != current_user.get("user_id"):
+    # Admin can only update a location record that belongs to their trip
+    trip = db.session.get(Trip, location.trip_id)
+    if not trip or str(trip.assigned_to) != current_user.get("user_id"):
             return jsonify({"error": "forbidden"}), 403
 
     payload = request.get_json(silent=True) or {}

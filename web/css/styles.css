@@ -505,8 +505,8 @@ body {
     font-size: 15px;
 }
 
-/* ── Driver self marker (different colour from bus markers) ── */
-.driver-self-marker {
+/* ── Admin self marker (different colour from bus markers) ── */
+.admin-self-marker {
     background: #0D1B2A !important;
 }
 
@@ -527,20 +527,20 @@ body {
 .btn-danger:hover { background: #c0392b; }
 
 /* ── Modal form groups ── */
-#driver-trip-modal .modal-content {
+#admin-trip-modal .modal-content {
     max-width: 480px;
 }
-#driver-trip-modal .form-group {
+#admin-trip-modal .form-group {
     margin-bottom: 16px;
 }
-#driver-trip-modal .form-group label {
+#admin-trip-modal .form-group label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
     color: #0D1B2A;
 }
-#driver-trip-modal .form-group select,
-#driver-trip-modal .form-group input {
+#admin-trip-modal .form-group select,
+#admin-trip-modal .form-group input {
     width: 100%;
     padding: 10px 12px;
     border: 2px solid #F5F5F5;
@@ -548,21 +548,21 @@ body {
     font-size: 15px;
     box-sizing: border-box;
 }
-#driver-trip-modal .form-group select:focus,
-#driver-trip-modal .form-group input:focus {
+#admin-trip-modal .form-group select:focus,
+#admin-trip-modal .form-group input:focus {
     border-color: #1A8A72;
     outline: none;
 }
 
 /* ── Section header add-trip button layout ── */
-#driver-trips .section-header {
+#admin-trips .section-header {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 12px;
 }
-#driver-trips .section-header > div,
-#driver-trips .section-header h2,
-#driver-trips .section-header p {
+#admin-trips .section-header > div,
+#admin-trips .section-header h2,
+#admin-trips .section-header p {
     flex-basis: 100%;
 }

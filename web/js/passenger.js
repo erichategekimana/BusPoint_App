@@ -14,7 +14,7 @@ let selectedPaymentMethod = 'mtn';
 function showPassengerDashboard() {
     document.getElementById('auth-section')?.classList.add('hidden');
     document.getElementById('passenger-dashboard')?.classList.add('active');
-    document.getElementById('driver-dashboard')?.classList.remove('active');
+    document.getElementById('admin-dashboard')?.classList.remove('active');
 
     const userName = document.getElementById('userName');
     if (userName && currentUser) userName.textContent = currentUser.full_name;
