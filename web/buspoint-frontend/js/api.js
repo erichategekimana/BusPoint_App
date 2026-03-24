@@ -148,6 +148,9 @@ const API = {
                 body: locationData
             });
         },
+
+        getAvailableTrips() {
+            return API.request('/trips/available');},
         
         getTripPassengers(tripId) {
             // This endpoint might need to be added to backend

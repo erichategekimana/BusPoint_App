@@ -129,6 +129,32 @@ const DriverDashboard = {
             // Add route polyline and stops
         }, 100);
     },
+
+
+
+    initMap() {
+        const map = BusMap.init('driver-map');
+        if (this.currentTrip?.itinerary && this.currentTrip.itinerary.length > 0) {
+            const coordinates = this.currentTrip.itinerary.map((stop, idx) => {
+                // Generate approximate coordinates around Kigali
+                const angle = (idx / this.currentTrip.itinerary.length) * Math.PI * 2;
+                const radius = 0.03;
+                return [
+                    Config.MAP_CENTER[0] + Math.cos(angle) * radius,
+                    Config.MAP_CENTER[1] + Math.sin(angle) * radius
+            ];
+        });
+        const routeLine = BusMap.drawRoute(map, coordinates, { color: '#2E7D32', weight: 4 });
+        coordinates.forEach((coord, idx) => {
+            BusMap.addStopMarker(map, coord[0], coord[1], this.currentTrip.itinerary[idx].stop_name, idx + 1);
+        });
+        if (coordinates.length) map.fitBounds(routeLine.getBounds());
+    }
+},
+
+
+
+
     
     async selectTrip() {
         Utils.showLoading('Loading available trips...');
@@ -177,15 +203,18 @@ const DriverDashboard = {
     
     async assignTrip(tripId) {
         Utils.modal.close();
-        Utils.showLoading('Assigning trip...');
-        
-        // In real app, call API to assign trip to driver
-        setTimeout(() => {
+        Utils.showLoading('Loading trip details...');
+
+        try {
+            const trip = await API.passenger.getTripDetails(tripId);
             Utils.hideLoading();
-            this.currentTrip = { id: tripId, route_name: 'Selected Route' }; // Mock
+            this.currentTrip = trip;
             this.render();
-            Utils.toast('Trip assigned successfully', 'success');
-        }, 1000);
+            Utils.toast('Trip assigned. You can now start location tracking.', 'success');
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.toast('Failed to load trip details', 'error');
+        }
     },
     
     viewPassengers() {
@@ -219,5 +248,14 @@ const DriverDashboard = {
         `;
         
         Utils.modal.open(modalContent, { title: 'Passenger List' });
+    },
+
+
+    cleanup() {
+        // Stop any ongoing location tracking if active
+        if (DriverLocation && DriverLocation.stopTracking) {
+            DriverLocation.stopTracking();
+        }
+        // Clear any timers or intervals (none yet)
     }
 };

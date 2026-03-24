@@ -204,3 +204,11 @@ def get_single_trip(trip_id):
     data['route_name'] = route.name if route else 'Unknown'
     
     return jsonify(data), 200
+
+
+
+@trip_bp.route('/available', methods=['GET'])
+@jwt_required
+def get_available_trips():
+    trips = Trip.query.filter(Trip.status.in_(['scheduled', 'delayed'])).order_by(Trip.departure_time).all()
+    return jsonify([trip.to_dict() for trip in trips]), 200

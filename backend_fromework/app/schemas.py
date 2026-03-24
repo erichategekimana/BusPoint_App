@@ -65,6 +65,7 @@ class BusCreateSchema(BaseModel):
 class RouteCreateSchema(BaseModel):
     route_code: str = Field(..., min_length=3, max_length=20, description="Unique code like 'KIM-NYA'")
     name: str = Field(..., min_length=3, max_length=100, description="Example: Kimironko - Nyabugogo")
+    base_route_price: Optional[float] = Field(default=500.0, ge=0, description="Base price for the route")
 
 class RouteStopSchema(BaseModel):
     stop_id: UUID = Field(...)

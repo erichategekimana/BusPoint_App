@@ -1,9 +1,22 @@
 const DriverScanner = {
     html5QrCode: null,
     isScanning: false,
+    isInitialized: false,
+    scannerContainerId: 'qr-reader',
     
     init() {
         this.render();
+        
+        // If scanner already exists and is scanning, just reattach to the new DOM
+        if (this.isInitialized && this.html5QrCode && this.isScanning) {
+            // Scanner is already running, no need to restart
+            return;
+        }
+        
+        // Only start scanner if not already initialized
+        if (!this.isInitialized) {
+            this.startScanner();
+        }
     },
     
     render() {
@@ -16,7 +29,7 @@ const DriverScanner = {
                     </div>
                     <div class="card-body">
                         <div id="scanner-container" style="margin-bottom: 1.5rem;">
-                            <div id="qr-reader" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
+                            <div id="${this.scannerContainerId}" style="width: 100%; max-width: 500px; margin: 0 auto;"></div>
                         </div>
                         
                         <div id="manual-entry" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);">
@@ -57,14 +70,21 @@ const DriverScanner = {
             </div>
         `;
         
-        setTimeout(() => this.startScanner(), 100);
+        // Restore stats from localStorage if available
+        this.restoreStats();
     },
     
     startScanner() {
-        const qrReader = document.getElementById('qr-reader');
+        const qrReader = document.getElementById(this.scannerContainerId);
         if (!qrReader) return;
         
-        this.html5QrCode = new Html5Qrcode("qr-reader");
+        // Clean up existing scanner if any
+        if (this.html5QrCode) {
+            this.html5QrCode.stop().catch(() => {});
+            this.html5QrCode = null;
+        }
+        
+        this.html5QrCode = new Html5Qrcode(this.scannerContainerId);
         
         const config = {
             fps: 10,
@@ -75,11 +95,11 @@ const DriverScanner = {
         this.html5QrCode.start(
             { facingMode: "environment" },
             config,
-            (decodedText, decodedResult) => {
+            (decodedText) => {
                 this.onScanSuccess(decodedText);
             },
             (errorMessage) => {
-                // Scan error - ignore continuous errors
+                // Ignore continuous errors
             }
         ).catch(err => {
             console.error('Failed to start scanner:', err);
@@ -93,17 +113,29 @@ const DriverScanner = {
         });
         
         this.isScanning = true;
+        this.isInitialized = true;
+        
+        // Store permission granted
+        localStorage.setItem('camera_permission_granted', 'true');
+    },
+    
+    restoreStats() {
+        const scanned = localStorage.getItem('scanned_count') || '0';
+        const invalid = localStorage.getItem('invalid_count') || '0';
+        const scannedEl = document.getElementById('scanned-count');
+        const invalidEl = document.getElementById('invalid-count');
+        if (scannedEl) scannedEl.textContent = scanned;
+        if (invalidEl) invalidEl.textContent = invalid;
     },
     
     onScanSuccess(token) {
-        // Prevent multiple rapid scans
         if (this.isScanning === 'processing') return;
         this.isScanning = 'processing';
         
-        // Pause scanning
-        this.html5QrCode.pause();
+        if (this.html5QrCode) {
+            this.html5QrCode.pause();
+        }
         
-        // Verify token
         this.verifyToken(token);
     },
     
@@ -111,13 +143,10 @@ const DriverScanner = {
         Utils.showLoading('Verifying ticket...');
         
         try {
-            // In real app, call API to verify token
-            // const result = await API.driver.verifyTicket(token);
-            
-            // Simulate verification
+            // Simulate verification (replace with real API later)
             await new Promise(r => setTimeout(r, 1000));
             
-            const isValid = token.length >= 6; // Simple validation
+            const isValid = token.length >= 6;
             const result = {
                 valid: isValid,
                 ticket: isValid ? {
@@ -181,10 +210,7 @@ const DriverScanner = {
                     </button>
                 </div>
             `;
-            
-            // Play success sound
             this.playSound('success');
-            
         } else {
             container.innerHTML = `
                 <div style="background: #FFEBEE; border: 2px solid var(--danger); border-radius: var(--radius-lg); padding: 1.5rem; animation: shake 0.5s ease;">
@@ -198,8 +224,6 @@ const DriverScanner = {
                     </button>
                 </div>
             `;
-            
-            // Play error sound
             this.playSound('error');
         }
     },
@@ -208,8 +232,10 @@ const DriverScanner = {
         document.getElementById('scan-result').innerHTML = '';
         document.getElementById('manual-token').value = '';
         
-        if (this.html5QrCode) {
+        if (this.html5QrCode && this.html5QrCode.isScanning === false) {
             this.html5QrCode.resume();
+            this.isScanning = true;
+        } else {
             this.isScanning = true;
         }
     },
@@ -217,12 +243,14 @@ const DriverScanner = {
     updateStats(type) {
         const element = document.getElementById(type === 'scanned' ? 'scanned-count' : 'invalid-count');
         if (element) {
-            element.textContent = parseInt(element.textContent) + 1;
+            const current = parseInt(element.textContent) || 0;
+            const newCount = current + 1;
+            element.textContent = newCount;
+            localStorage.setItem(`${type}_count`, newCount);
         }
     },
     
     playSound(type) {
-        // Create audio context for beep sounds
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             const ctx = new AudioContext();
@@ -233,12 +261,12 @@ const DriverScanner = {
             gain.connect(ctx.destination);
             
             if (type === 'success') {
-                osc.frequency.value = 880; // A5
+                osc.frequency.value = 880;
                 gain.gain.value = 0.1;
                 osc.start();
                 setTimeout(() => osc.stop(), 200);
             } else {
-                osc.frequency.value = 220; // A3
+                osc.frequency.value = 220;
                 gain.gain.value = 0.1;
                 osc.start();
                 setTimeout(() => osc.stop(), 300);
@@ -249,10 +277,20 @@ const DriverScanner = {
     },
     
     cleanup() {
+        // Don't fully cleanup on tab switch - just pause scanning
+        if (this.html5QrCode && this.html5QrCode.isScanning) {
+            this.html5QrCode.pause();
+            this.isScanning = false;
+        }
+    },
+    
+    destroy() {
+        // Only call this on logout or app shutdown
         if (this.html5QrCode) {
             this.html5QrCode.stop().catch(() => {});
             this.html5QrCode = null;
         }
         this.isScanning = false;
+        this.isInitialized = false;
     }
 };

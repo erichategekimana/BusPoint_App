@@ -53,7 +53,7 @@ const AdminRoutes = {
     },
     
     renderRouteCard(route) {
-        const stopCount = route.route_stops?.length || 0;
+        const stopCount = route.path?.length || 0;
         
         return `
             <div class="card" style="cursor: pointer;" onclick="AdminRoutes.viewRoute('${route.id}')">
@@ -159,10 +159,10 @@ const AdminRoutes = {
                 <div id="route-map" style="height: 300px; border-radius: var(--radius); margin-bottom: 1rem;"></div>
                 <h4 style="margin-bottom: 1rem;">Stop Sequence</h4>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    ${route.route_stops?.map((rs, index) => `
+                    ${route.path?.map((rs, index) => `
                         <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--gray-100); border-radius: var(--radius);">
                             <div style="width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
-                                ${rs.stop_order}
+                                ${rs.order}
                             </div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500;">${rs.stop?.name || 'Unknown'}</div>
@@ -244,29 +244,35 @@ const AdminRoutes = {
         const name = document.getElementById('stop-name').value.trim();
         const lat = parseFloat(document.getElementById('stop-lat').value);
         const lon = parseFloat(document.getElementById('stop-lon').value);
-        
+
         if (!name || isNaN(lat) || isNaN(lon)) {
             Utils.toast('Please fill in all fields', 'warning');
             return;
         }
-        
+        if (lat < -90 || lat > 90) {
+            Utils.toast('Latitude must be between -90 and 90', 'warning');
+            return;
+        }
+        if (lon < -180 || lon > 180) {
+            Utils.toast('Longitude must be between -180 and 180', 'warning');
+            return;
+        }
+
         Utils.showLoading('Creating stop...');
-        
         try {
             await API.admin.createStop({
                 name: name,
                 latitude: lat,
                 longitude: lon
             });
-            
             Utils.hideLoading();
             Utils.modal.close();
             Utils.toast('Stop created', 'success');
             await this.loadStops();
-            this.manageStops();
-            
+            this.manageStops(); // reopen with fresh list
         } catch (error) {
             Utils.hideLoading();
+            Utils.toast(error.message, 'error');
         }
     },
     
@@ -288,9 +294,65 @@ const AdminRoutes = {
             Utils.hideLoading();
             Utils.toast('Stop added to route', 'success');
             await this.loadRoutes();
+            // Optionally close the modal
+            Utils.modal.close();
             
         } catch (error) {
             Utils.hideLoading();
+            // Show the actual error message from the server
+            Utils.toast(error.message, 'error');
+        }
+},
+
+async editRoute(routeId) {
+        const route = this.routes.find(r => r.id === routeId);
+        if (!route) return;
+
+        const modalContent = `
+            <div style="text-align: left;">
+                <div class="form-group">
+                    <label>Route Code</label>
+                    <input type="text" id="edit-route-code" class="form-select" value="${route.route_code}">
+                </div>
+                <div class="form-group">
+                    <label>Route Name</label>
+                    <input type="text" id="edit-route-name" class="form-select" value="${route.name}">
+                </div>
+                <div class="form-group">
+                    <label>Base Price (RWF)</label>
+                    <input type="number" id="edit-route-price" class="form-select" value="${route.base_price || 500}">
+                </div>
+                <button class="btn btn-success" onclick="AdminRoutes.updateRoute('${routeId}')" style="width: 100%;">
+                    <i class="fas fa-save"></i> Update Route
+                </button>
+            </div>
+        `;
+        Utils.modal.open(modalContent, { title: 'Edit Route' });
+    },
+
+    async updateRoute(routeId) {
+        const code = document.getElementById('edit-route-code').value.trim().toUpperCase();
+        const name = document.getElementById('edit-route-name').value.trim();
+        const price = parseInt(document.getElementById('edit-route-price').value);
+
+        if (!code || !name || isNaN(price)) {
+            Utils.toast('Please fill all fields', 'warning');
+            return;
+        }
+
+        Utils.showLoading('Updating...');
+        try {
+            // Assuming there's an API endpoint to update a route (we'll need to add one if missing)
+            // For now, we can just show a warning.
+            Utils.toast('Update endpoint not yet implemented', 'warning');
+            // If you have an update route API, call it here.
+            // await API.admin.updateRoute(routeId, { route_code: code, name, base_price: price });
+            Utils.hideLoading();
+            Utils.modal.close();
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.toast(error.message, 'error');
         }
     }
-};
+}
+
