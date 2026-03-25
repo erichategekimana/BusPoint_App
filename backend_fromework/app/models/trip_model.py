@@ -18,6 +18,10 @@ class Trip(db.Model):
     current_lat = db.Column(db.Float, nullable=True)  # Updated by driver app
     current_lon = db.Column(db.Float, nullable=True)  # Updated by driver app
     driver_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    STATUS_SCHEDULED = 'scheduled'
+    STATUS_ACTIVE = 'active'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CANCELLED = 'cancelled'
 
     # Relationships
     bus = db.relationship('Bus', back_populates='trips')
