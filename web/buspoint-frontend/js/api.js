@@ -154,9 +154,21 @@ const API = {
         
         getTripPassengers(tripId) {
             // This endpoint might need to be added to backend
-            return API.request(`/trips/${tripId}/passengers`);
+            return API.request(`/trips/${tripId}/passengers`);},
+        claimTrip(tripId) {
+            return API.request(`/trips/${tripId}/claim`, { method: 'POST' });
+        },
+        getMyActiveTrip() {
+            return API.request('/trips/my-active-trip');
+        },
+
+        completeTrip(tripId) {
+            return API.request(`/trips/${tripId}/complete`, { method: 'POST' });
+        },
+        cancelTrip(tripId) {
+            return API.request(`/trips/${tripId}/cancel`, { method: 'POST' });
         }
-    },
+            },
 
     // Admin endpoints
     admin: {
