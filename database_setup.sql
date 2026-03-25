@@ -92,7 +92,7 @@ create table if not exists trips
 	route_id uuid not null
 		references routes
 			on delete cascade,
-	driver_id uuid references users(id) on delete cascade set null,
+	driver_id uuid references users(id) on delete set null,
 	departure_time timestamp with time zone not null,
 	arrival_time timestamp with time zone,
 	status varchar(20) default 'scheduled'::character varying,
