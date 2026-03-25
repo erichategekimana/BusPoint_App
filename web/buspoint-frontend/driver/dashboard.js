@@ -6,11 +6,24 @@ const DriverDashboard = {
         await this.checkActiveTrip();
         this.render();
     },
-    
+
     async checkActiveTrip() {
-        // In real app, fetch driver's assigned trip from API
-        // For now, we'll use a mock or let driver select
-        this.currentTrip = null;
+        try {
+            // First check if there's an active trip for this driver
+            const activeTrip = await API.driver.getMyActiveTrip();
+            if (activeTrip && activeTrip.id) {
+                this.currentTrip = activeTrip;
+                // Optionally store in localStorage for quick reference
+                localStorage.setItem('active_trip_id', activeTrip.id);
+            } else {
+                this.currentTrip = null;
+                localStorage.removeItem('active_trip_id');
+            }
+        } catch (error) {
+            // If 404 or other error, no active trip
+            this.currentTrip = null;
+            localStorage.removeItem('active_trip_id');
+        }
     },
     
     render() {
@@ -79,6 +92,12 @@ const DriverDashboard = {
                             <button class="btn btn-primary" onclick="App.navigate('scanner')">
                                 <i class="fas fa-qrcode"></i> Scan Tickets
                             </button>
+                            <button class="btn btn-success" onclick="DriverDashboard.completeTrip()">
+                                <i class="fas fa-check-circle"></i> Complete Trip
+                            </button>
+                            <button class="btn btn-danger" onclick="DriverDashboard.cancelTrip()">
+                                <i class="fas fa-ban"></i> Cancel Trip
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -121,24 +140,23 @@ const DriverDashboard = {
 
     async selectTrip() {
         Utils.showLoading('Loading available trips...');
-        
         try {
-            const trips = await API.admin.getTrips(); // Should be driver-specific endpoint
+            const trips = await API.driver.getAvailableTrips();
             Utils.hideLoading();
-            
-            const todayTrips = trips.filter(t => t.status === 'scheduled');
-            
+
+            const scheduledTrips = trips.filter(t => t.status === 'scheduled');
+
             const modalContent = `
                 <div style="max-height: 400px; overflow-y: auto;">
-                    ${todayTrips.length === 0 ? `
+                    ${scheduledTrips.length === 0 ? `
                         <div class="empty-state">
                             <i class="fas fa-calendar-times"></i>
                             <p>No trips available for today</p>
                         </div>
-                    ` : `
+                ` : `
                         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            ${todayTrips.map(trip => `
-                                <div class="trip-card" style="cursor: pointer;" onclick="DriverDashboard.assignTrip('${trip.id}')">
+                            ${scheduledTrips.map(trip => `
+                                <div class="trip-card" style="cursor: pointer;" onclick="DriverDashboard.claimAndAssignTrip('${trip.id}')">
                                     <div style="display: flex; justify-content: space-between; align-items: center;">
                                         <div>
                                             <div style="font-weight: 600; color: var(--gray-800);">
@@ -156,27 +174,31 @@ const DriverDashboard = {
                     `}
                 </div>
             `;
-            
             Utils.modal.open(modalContent, { title: 'Select Your Trip' });
-            
         } catch (error) {
             Utils.hideLoading();
+            Utils.toast('Failed to load available trips', 'error');
         }
     },
     
-    async assignTrip(tripId) {
+    async claimAndAssignTrip(tripId) {
         Utils.modal.close();
-        Utils.showLoading('Loading trip details...');
+        Utils.showLoading('Claiming trip...');
 
         try {
+            // First, claim the trip (assign to driver, set status to active)
+            await API.driver.claimTrip(tripId);
+
+            // Then fetch full trip details
             const trip = await API.passenger.getTripDetails(tripId);
             Utils.hideLoading();
             this.currentTrip = trip;
+            localStorage.setItem('active_trip_id', trip.id);
             this.render();
-            Utils.toast('Trip assigned. You can now start location tracking.', 'success');
+            Utils.toast('Trip claimed successfully! You can now start location tracking.', 'success');
         } catch (error) {
             Utils.hideLoading();
-            Utils.toast('Failed to load trip details', 'error');
+            Utils.toast(error.message || 'Failed to claim trip', 'error');
         }
     },
     
@@ -210,6 +232,50 @@ const DriverDashboard = {
         `;
         
         Utils.modal.open(modalContent, { title: 'Passenger List' });
+    },
+
+
+
+    async completeTrip() {
+        if (!this.currentTrip) return;
+        if (confirm('Are you sure you want to mark this trip as completed?')) {
+            Utils.showLoading('Completing trip...');
+            try {
+                await API.driver.completeTrip(this.currentTrip.id);
+                Utils.hideLoading();
+                Utils.toast('Trip completed successfully', 'success');
+                // Clear active trip and refresh dashboard
+                this.currentTrip = null;
+                localStorage.removeItem('active_trip_id');
+                // Stop location tracking if active
+                DriverLocation.stopTracking();
+                this.render();
+            } catch (error) {
+                Utils.hideLoading();
+                Utils.toast(error.message || 'Failed to complete trip', 'error');
+            }
+        }
+    },
+
+    async cancelTrip() {
+        if (!this.currentTrip) return;
+        if (confirm('Are you sure you want to cancel this trip? This action cannot be undone.')) {
+            Utils.showLoading('Cancelling trip...');
+            try {
+                await API.driver.cancelTrip(this.currentTrip.id);
+                Utils.hideLoading();
+                Utils.toast('Trip cancelled', 'success');
+                // Clear active trip and refresh dashboard
+                this.currentTrip = null;
+                localStorage.removeItem('active_trip_id');
+                // Stop location tracking if active
+                DriverLocation.stopTracking();
+                this.render();
+            } catch (error) {
+                Utils.hideLoading();
+                Utils.toast(error.message || 'Failed to cancel trip', 'error');
+            }
+        }
     },
 
     cleanup() {
