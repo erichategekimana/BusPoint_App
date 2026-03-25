@@ -143,7 +143,7 @@ def update_trip_status(trip_id):
     data = request.get_json()
     new_status = data.get('status')
     
-    valid_statuses = ['scheduled', 'delayed', 'completed', 'cancelled']
+    valid_statuses = ['scheduled', 'active','delayed', 'completed', 'cancelled']
     if new_status not in valid_statuses:
         return jsonify({"error": "bad_request", "message": "Invalid status"}), 400
 
@@ -212,3 +212,129 @@ def get_single_trip(trip_id):
 def get_available_trips():
     trips = Trip.query.filter(Trip.status.in_(['scheduled', 'delayed'])).order_by(Trip.departure_time).all()
     return jsonify([trip.to_dict() for trip in trips]), 200
+
+
+# get_available_reips but assigned trips excluded
+
+# @trip_bp.route('/available', methods=['GET'])
+# @jwt_required
+# def get_available_trips():
+#     trips = Trip.query.filter(
+#         Trip.status == 'scheduled',
+#         Trip.driver_id.is_(None)
+#     ).order_by(Trip.departure_time).all()
+#     return jsonify([trip.to_dict() for trip in trips]), 200
+
+
+
+
+
+
+
+@trip_bp.route('/<uuid:trip_id>/claim', methods=['POST'])
+@jwt_required
+@roles_required('driver')
+@db_commit_or_rollback
+def claim_trip(trip_id):
+    driver_id = g.current_user['id']
+    trip = Trip.query.get_or_404(trip_id)
+    
+    # Check if trip is already assigned
+    if trip.driver_id is not None:
+        return jsonify({"error": "conflict", "message": "Trip already assigned to another driver"}), 409
+    
+    # Check if trip status is scheduled
+    if trip.status != 'scheduled':
+        return jsonify({"error": "conflict", "message": f"Trip cannot be claimed because its status is '{trip.status}'"}), 409
+    
+    # Check if driver already has an active trip
+    existing_active = Trip.query.filter(
+        Trip.driver_id == driver_id,
+        Trip.status == 'active'
+    ).first()
+    if existing_active:
+        return jsonify({"error": "conflict", "message": "You already have an active trip"}), 409
+    
+    # Claim the trip
+    trip.driver_id = driver_id
+    trip.status = 'active'
+    
+    return jsonify({"message": "Trip claimed successfully", "trip": trip.to_dict()}), 200
+
+@trip_bp.route('/my-active-trip', methods=['GET'])
+@jwt_required
+@roles_required('driver')
+def get_my_active_trip():
+    driver_id = g.current_user['id']
+    trip = Trip.query.filter(
+        Trip.driver_id == driver_id,
+        Trip.status == 'active'
+    ).first()
+    
+    if not trip:
+        return jsonify({"message": "No active trip found"}), 404
+    
+    # Return detailed trip info (like /details endpoint)
+    data = trip.to_dict()
+    data['route_name'] = trip.route.name
+    data['bus_plate'] = trip.bus.plate_number
+    data['bus_details'] = {
+        "plate": trip.bus.plate_number,
+        "capacity": trip.bus.capacity
+    }
+    data['itinerary'] = [
+        {
+            "stop_name": rs.stop.name,
+            "stop_id": str(rs.stop.id),
+            "arrival_order": rs.stop_order,
+            "minutes_from_start": rs.estimated_minutes_from_start
+        } 
+        for rs in sorted(trip.route.route_stops, key=lambda x: x.stop_order)
+    ]
+    return jsonify(data), 200
+
+
+
+
+
+@trip_bp.route('/<uuid:trip_id>/complete', methods=['POST'])
+@jwt_required
+@roles_required('driver')
+@db_commit_or_rollback
+def complete_trip(trip_id):
+    driver_id = g.current_user['id']
+    trip = Trip.query.get_or_404(trip_id)
+
+    # Ensure trip belongs to this driver and is active
+    if str(trip.driver_id) != driver_id:
+        return jsonify({"error": "forbidden", "message": "This trip is not assigned to you"}), 403
+    if trip.status != 'active':
+        return jsonify({"error": "conflict", "message": f"Cannot complete trip with status '{trip.status}'"}), 409
+
+    trip.status = 'completed'
+    # Optionally set arrival_time
+    if not trip.arrival_time:
+        trip.arrival_time = datetime.utcnow()
+
+    return jsonify({"message": "Trip marked as completed"}), 200
+
+
+@trip_bp.route('/<uuid:trip_id>/cancel', methods=['POST'])
+@jwt_required
+@roles_required('driver')
+@db_commit_or_rollback
+def cancel_trip(trip_id):
+    driver_id = g.current_user['id']
+    trip = Trip.query.get_or_404(trip_id)
+
+    # Ensure trip belongs to this driver and is active (or maybe scheduled)
+    if str(trip.driver_id) != driver_id:
+        return jsonify({"error": "forbidden", "message": "This trip is not assigned to you"}), 403
+    if trip.status not in ['scheduled', 'active']:
+        return jsonify({"error": "conflict", "message": f"Cannot cancel trip with status '{trip.status}'"}), 409
+
+    trip.status = 'cancelled'
+    # Optionally clear driver assignment
+    trip.driver_id = None
+
+    return jsonify({"message": "Trip cancelled"}), 200
