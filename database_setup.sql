@@ -92,6 +92,7 @@ create table if not exists trips
 	route_id uuid not null
 		references routes
 			on delete cascade,
+	driver_id uuid references users(id) on delete cascade set null,
 	departure_time timestamp with time zone not null,
 	arrival_time timestamp with time zone,
 	status varchar(20) default 'scheduled'::character varying,
@@ -103,6 +104,8 @@ create table if not exists trips
 
 create index if not exists idx_trips_departure_time
 	on trips (departure_time);
+create index if not exists idx_trips_driver_id 
+	on trips(driver_id);
 
 create index if not exists idx_trips_route_id
 	on trips (route_id);
