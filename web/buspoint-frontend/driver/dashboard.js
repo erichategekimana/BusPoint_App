@@ -34,36 +34,6 @@ const DriverDashboard = {
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="stats-grid" style="margin-top: 2rem;">
-                        <div class="stat-card">
-                            <div class="stat-icon primary">
-                                <i class="fas fa-route"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h4>12</h4>
-                                <p>Trips This Week</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon success">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h4>348</h4>
-                                <p>Passengers Carried</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon warning">
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <div class="stat-info">
-                                <h4>4.8</h4>
-                                <p>Rating</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             `;
             return;
@@ -130,32 +100,25 @@ const DriverDashboard = {
         }, 100);
     },
 
-
-
     initMap() {
         const map = BusMap.init('driver-map');
         if (this.currentTrip?.itinerary && this.currentTrip.itinerary.length > 0) {
             const coordinates = this.currentTrip.itinerary.map((stop, idx) => {
-                // Generate approximate coordinates around Kigali
                 const angle = (idx / this.currentTrip.itinerary.length) * Math.PI * 2;
                 const radius = 0.03;
                 return [
                     Config.MAP_CENTER[0] + Math.cos(angle) * radius,
                     Config.MAP_CENTER[1] + Math.sin(angle) * radius
-            ];
-        });
-        const routeLine = BusMap.drawRoute(map, coordinates, { color: '#2E7D32', weight: 4 });
-        coordinates.forEach((coord, idx) => {
-            BusMap.addStopMarker(map, coord[0], coord[1], this.currentTrip.itinerary[idx].stop_name, idx + 1);
-        });
-        if (coordinates.length) map.fitBounds(routeLine.getBounds());
-    }
-},
+                ];
+            });
+            const routeLine = BusMap.drawRoute(map, coordinates, { color: '#2E7D32', weight: 4 });
+            coordinates.forEach((coord, idx) => {
+                BusMap.addStopMarker(map, coord[0], coord[1], this.currentTrip.itinerary[idx].stop_name, idx + 1);
+            });
+            if (coordinates.length) map.fitBounds(routeLine.getBounds());
+        }
+    },
 
-
-
-
-    
     async selectTrip() {
         Utils.showLoading('Loading available trips...');
         
@@ -220,7 +183,6 @@ const DriverDashboard = {
     viewPassengers() {
         if (!this.currentTrip) return;
         
-        // Show passengers list modal
         const modalContent = `
             <div style="max-height: 400px; overflow-y: auto;">
                 <table class="data-table">
@@ -250,12 +212,9 @@ const DriverDashboard = {
         Utils.modal.open(modalContent, { title: 'Passenger List' });
     },
 
-
     cleanup() {
-        // Stop any ongoing location tracking if active
         if (DriverLocation && DriverLocation.stopTracking) {
             DriverLocation.stopTracking();
         }
-        // Clear any timers or intervals (none yet)
     }
 };

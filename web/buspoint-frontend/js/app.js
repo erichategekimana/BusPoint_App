@@ -46,7 +46,7 @@ const App = {
     
     navigate(page) {
         // Cleanup previous page
-        this.cleanupCurrentPage();
+        this.cleanupCurrentPage(page);
         
         this.currentPage = page;
         
@@ -104,8 +104,9 @@ const App = {
         }
     },
     
-    cleanupCurrentPage() {
+    cleanupCurrentPage(newPage) {
         const role = Auth.currentUser?.role;
+        const oldPage = this.currentPage;
 
         // only cleanup passenger tracking if user is a passenger
         if (role === Config.ROLES.PASSENGER) {
@@ -114,14 +115,28 @@ const App = {
 
         // Only cleanup driver dashboard if user is a driver
         if (role === Config.ROLES.DRIVER) {
-            DriverDashboard.cleanup();
-            if (window.DriverLocation) {
-                DriverLocation.stopTracking();
+            const driverPages = ['driver-dashboard', 'scanner'];
+
+            // If going to a page that is not a driver page and not the profile
+            if (newPage && !driverPages.includes(newPage) && newPage !== 'profile') {
+            DriverLocation.stopTracking();      // stop tracking when leaving driver role
+            DriverScanner.destroy();            // fully destroy scanner
+        } else {
+            // Staying within driver pages: only pause scanner when leaving the scanner page
+            if (oldPage === 'scanner' && newPage !== 'scanner') {
+                try {
+                    DriverScanner.cleanup();        // just pause the scanner
+                } catch (error) {
+                    console.error('Error occurred while cleaning up scanner:', error);
+                }
             }
+            // Do NOT stop location tracking
         }
-        // destroy any open modals
-        Utils.modal.close();
-    },
+};
+
+    // Destroy any open modals
+    Utils.modal.close();
+},
 
     renderProfile() {
         const container = document.getElementById('main-content');

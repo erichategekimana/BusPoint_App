@@ -3,8 +3,16 @@ const DriverLocation = {
     tripId: null,
     lastPosition: null,
     updateInterval: null,
+    isTracking: false,
     
     startTracking(tripId) {
+        // Don't restart if already tracking this trip
+        if (this.isTracking && this.tripId === tripId) {
+            Utils.toast('Location tracking already active', 'info');
+            this.renderTrackingUI();
+            return;
+        }
+        
         this.tripId = tripId;
         
         if (!navigator.geolocation) {
@@ -12,13 +20,12 @@ const DriverLocation = {
             return;
         }
         
-        // Check permissions
+        // Check if permission already granted
         navigator.permissions.query({ name: 'geolocation' }).then(result => {
             if (result.state === 'denied') {
                 Utils.toast('Please enable location permissions in your browser settings', 'error');
                 return;
             }
-            
             this.beginTracking();
         });
     },
@@ -41,7 +48,7 @@ const DriverLocation = {
                 enableHighAccuracy: true, 
                 timeout: 10000, 
                 maximumAge: 0,
-                distanceFilter: 10 // Update every 10 meters
+                distanceFilter: 10
             }
         );
         
@@ -54,6 +61,10 @@ const DriverLocation = {
         
         Utils.hideLoading();
         Utils.toast('Location tracking started', 'success');
+        this.isTracking = true;
+        
+        // Store tracking state
+        localStorage.setItem('active_tracking_trip', this.tripId);
         
         // Show tracking UI
         this.renderTrackingUI();
@@ -71,10 +82,7 @@ const DriverLocation = {
             timestamp: position.timestamp
         };
         
-        // Update UI if visible
         this.updateTrackingUI(this.lastPosition);
-        
-        // Send to server (throttled to every 10 seconds via interval)
     },
     
     onPositionError(error) {
@@ -101,16 +109,13 @@ const DriverLocation = {
                 latitude: position.latitude,
                 longitude: position.longitude
             });
-            
             console.log('Location updated:', position.latitude, position.longitude);
-            
         } catch (error) {
             console.error('Failed to update location:', error);
         }
     },
     
     renderTrackingUI() {
-        // Create floating tracking panel
         let panel = document.getElementById('location-tracking-panel');
         if (!panel) {
             panel = document.createElement('div');
@@ -133,10 +138,6 @@ const DriverLocation = {
                         <i class="fas fa-tachometer-alt"></i>
                         <span id="loc-speed">-- km/h</span>
                     </div>
-                    <div class="stat">
-                        <i class="fas fa-satellite"></i>
-                        <span id="loc-satellites">--</span>
-                    </div>
                 </div>
                 <div class="tracking-status" id="tracking-status">
                     <span class="pulse"></span>
@@ -145,74 +146,77 @@ const DriverLocation = {
             `;
             document.body.appendChild(panel);
             
-            // Add styles
-            const style = document.createElement('style');
-            style.textContent = `
-                .location-tracking-panel {
-                    position: fixed;
-                    bottom: 100px;
-                    right: 20px;
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-                    padding: 1rem;
-                    z-index: 1000;
-                    min-width: 200px;
-                    border-left: 4px solid var(--primary);
-                }
-                .tracking-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    margin-bottom: 0.75rem;
-                    font-weight: 600;
-                    color: var(--primary);
-                }
-                .btn-stop {
-                    margin-left: auto;
-                    background: var(--danger);
-                    color: white;
-                    border: none;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
-                    cursor: pointer;
-                }
-                .tracking-stats {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 0.5rem;
-                    margin-bottom: 0.75rem;
-                }
-                .tracking-stats .stat {
-                    text-align: center;
-                    font-size: 0.8rem;
-                }
-                .tracking-stats .stat i {
-                    display: block;
-                    color: var(--gray-400);
-                    margin-bottom: 0.25rem;
-                }
-                .tracking-status {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    font-size: 0.85rem;
-                    color: var(--gray-600);
-                }
-                .pulse {
-                    width: 8px;
-                    height: 8px;
-                    background: var(--primary);
-                    border-radius: 50%;
-                    animation: pulse-dot 2s infinite;
-                }
-                @keyframes pulse-dot {
-                    0%, 100% { opacity: 1; transform: scale(1); }
-                    50% { opacity: 0.5; transform: scale(1.2); }
-                }
-            `;
-            document.head.appendChild(style);
+            // Add styles (already in driver.css or inline)
+            if (!document.getElementById('tracking-styles')) {
+                const style = document.createElement('style');
+                style.id = 'tracking-styles';
+                style.textContent = `
+                    .location-tracking-panel {
+                        position: fixed;
+                        bottom: 100px;
+                        right: 20px;
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                        padding: 1rem;
+                        z-index: 1000;
+                        min-width: 180px;
+                        border-left: 4px solid var(--primary);
+                    }
+                    .tracking-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        margin-bottom: 0.75rem;
+                        font-weight: 600;
+                        color: var(--primary);
+                    }
+                    .btn-stop {
+                        margin-left: auto;
+                        background: var(--danger);
+                        color: white;
+                        border: none;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                    }
+                    .tracking-stats {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 0.5rem;
+                        margin-bottom: 0.75rem;
+                    }
+                    .tracking-stats .stat {
+                        text-align: center;
+                        font-size: 0.8rem;
+                    }
+                    .tracking-stats .stat i {
+                        display: block;
+                        color: var(--gray-400);
+                        margin-bottom: 0.25rem;
+                    }
+                    .tracking-status {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        font-size: 0.85rem;
+                        color: var(--gray-600);
+                    }
+                    .pulse {
+                        width: 8px;
+                        height: 8px;
+                        background: var(--primary);
+                        border-radius: 50%;
+                        animation: pulse-dot 2s infinite;
+                    }
+                    @keyframes pulse-dot {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.5; transform: scale(1.2); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         }
     },
     
@@ -240,7 +244,17 @@ const DriverLocation = {
         
         this.tripId = null;
         this.lastPosition = null;
+        this.isTracking = false;
+        
+        localStorage.removeItem('active_tracking_trip');
         
         Utils.toast('Location tracking stopped', 'info');
+    },
+    
+    resumeTracking() {
+        const savedTripId = localStorage.getItem('active_tracking_trip');
+        if (savedTripId && !this.isTracking) {
+            this.startTracking(savedTripId);
+        }
     }
 };

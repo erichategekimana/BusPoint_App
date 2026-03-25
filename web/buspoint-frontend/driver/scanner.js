@@ -5,18 +5,10 @@ const DriverScanner = {
     scannerContainerId: 'qr-reader',
     
     init() {
+        // Fully destroy any existing scanner before rendering
+        this.destroy();
         this.render();
-        
-        // If scanner already exists and is scanning, just reattach to the new DOM
-        if (this.isInitialized && this.html5QrCode && this.isScanning) {
-            // Scanner is already running, no need to restart
-            return;
-        }
-        
-        // Only start scanner if not already initialized
-        if (!this.isInitialized) {
-            this.startScanner();
-        }
+        this.startScanner();
     },
     
     render() {
@@ -70,19 +62,21 @@ const DriverScanner = {
             </div>
         `;
         
-        // Restore stats from localStorage if available
         this.restoreStats();
     },
     
     startScanner() {
         const qrReader = document.getElementById(this.scannerContainerId);
         if (!qrReader) return;
-        
-        // Clean up existing scanner if any
+
+        // Clean up any existing instance
         if (this.html5QrCode) {
             this.html5QrCode.stop().catch(() => {});
             this.html5QrCode = null;
         }
+
+        // Clear container
+        qrReader.innerHTML = '';
         
         this.html5QrCode = new Html5Qrcode(this.scannerContainerId);
         
@@ -95,13 +89,13 @@ const DriverScanner = {
         this.html5QrCode.start(
             { facingMode: "environment" },
             config,
-            (decodedText) => {
-                this.onScanSuccess(decodedText);
-            },
-            (errorMessage) => {
-                // Ignore continuous errors
-            }
-        ).catch(err => {
+            (decodedText) => this.onScanSuccess(decodedText),
+            (errorMessage) => {} // ignore continuous errors
+        ).then(() => {
+            this.isScanning = true;
+            this.isInitialized = true;
+            localStorage.setItem('camera_permission_granted', 'true');
+        }).catch(err => {
             console.error('Failed to start scanner:', err);
             qrReader.innerHTML = `
                 <div class="empty-state" style="padding: 2rem;">
@@ -110,13 +104,9 @@ const DriverScanner = {
                     <p>Please allow camera access to scan tickets, or use manual entry below.</p>
                 </div>
             `;
+            this.isScanning = false;
+            this.isInitialized = false;
         });
-        
-        this.isScanning = true;
-        this.isInitialized = true;
-        
-        // Store permission granted
-        localStorage.setItem('camera_permission_granted', 'true');
     },
     
     restoreStats() {
@@ -232,7 +222,7 @@ const DriverScanner = {
         document.getElementById('scan-result').innerHTML = '';
         document.getElementById('manual-token').value = '';
         
-        if (this.html5QrCode && this.html5QrCode.isScanning === false) {
+        if (this.html5QrCode && !this.html5QrCode.isScanning) {
             this.html5QrCode.resume();
             this.isScanning = true;
         } else {
@@ -277,15 +267,14 @@ const DriverScanner = {
     },
     
     cleanup() {
-        // Don't fully cleanup on tab switch - just pause scanning
-        if (this.html5QrCode && this.html5QrCode.isScanning) {
-            this.html5QrCode.pause();
+        // Only pause if actually scanning
+        if (this.html5QrCode && typeof this.html5QrCode.isScanning !== 'undefined' && this.html5QrCode.isScanning) {
+            this.html5QrCode.pause().catch(() => {});
             this.isScanning = false;
         }
     },
     
     destroy() {
-        // Only call this on logout or app shutdown
         if (this.html5QrCode) {
             this.html5QrCode.stop().catch(() => {});
             this.html5QrCode = null;
