@@ -17,12 +17,14 @@ class Trip(db.Model):
     current_capacity = db.Column(db.Integer, nullable=False)
     current_lat = db.Column(db.Float, nullable=True)  # Updated by driver app
     current_lon = db.Column(db.Float, nullable=True)  # Updated by driver app
+    driver_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
 
     # Relationships
     bus = db.relationship('Bus', back_populates='trips')
     route = db.relationship('Route', back_populates='trips')
     bookings = db.relationship('Booking', back_populates='trip')
     locations = db.relationship('BusLocation', back_populates='trip', uselist=False)  # One-to-One for real-time tracking
+    driver = db.relationship('User', foreign_keys=[driver_id], backref='driven_trips')
 
 
     def to_dict(self):
@@ -33,5 +35,6 @@ class Trip(db.Model):
             "departure_time": self.departure_time.isoformat() if self.departure_time else None,
             "arrival_time": self.arrival_time.isoformat() if self.arrival_time else None,
             "status": self.status,
-            "available_seats": self.current_capacity
+            "available_seats": self.current_capacity,
+            "driver_id": str(self.driver_id) if self.driver_id else None
         }
