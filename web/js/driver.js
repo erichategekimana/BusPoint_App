@@ -311,32 +311,156 @@ function pushDriverLocationToAPI(tripId, lat, lng, speed, heading) {
 
 // ── QR SCANNER ──────────────────────────────────────────────────────────────
 
+let html5QrScanner = null;
+let scannerProcessing = false;
+let scanValidCount = 0;
+let scanInvalidCount = 0;
+
 function startDriverScanner() {
-    const video = document.getElementById('driver-scanner-video');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => {
-            video.srcObject = stream;
-            showNotification('Scanner started.', 'success');
-        })
-        .catch(() => showNotification('Camera access denied.', 'error'));
+    const container = document.getElementById('qr-reader');
+    if (!container) return;
+
+    if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {});
+        html5QrScanner = null;
+    }
+    container.innerHTML = '';
+
+    html5QrScanner = new Html5Qrcode('qr-reader');
+    html5QrScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => onQrScanSuccess(decodedText),
+        () => {}
+    ).then(() => {
+        showNotification('Scanner started — point at a ticket QR code.', 'success');
+    }).catch(err => {
+        console.error('Scanner error:', err);
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-camera fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>Camera access denied. Use manual entry below.</p></div>';
+    });
 }
 
 function stopDriverScanner() {
-    const video = document.getElementById('driver-scanner-video');
-    if (video && video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
+    if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {});
+        html5QrScanner = null;
+    }
+    const container = document.getElementById('qr-reader');
+    if (container) container.innerHTML = '';
+}
+
+function onQrScanSuccess(token) {
+    if (scannerProcessing) return;
+    scannerProcessing = true;
+    if (html5QrScanner) html5QrScanner.pause();
+    verifyTicketToken(token);
+}
+
+function verifyManualToken() {
+    const input = document.getElementById('manual-ticket-token');
+    const token = (input?.value || '').trim();
+    if (!token) {
+        showNotification('Please enter a ticket token.', 'error');
+        return;
+    }
+    verifyTicketToken(token);
+}
+
+async function verifyTicketToken(token) {
+    const resultDiv = document.getElementById('driver-scan-result');
+    resultDiv.innerHTML = '<div style="text-align:center;padding:20px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p>Verifying ticket...</p></div>';
+
+    try {
+        const result = await api.verifyTicket(token);
+
+        if (result.valid) {
+            scanValidCount++;
+            document.getElementById('scan-valid-count').textContent = scanValidCount;
+            playTicketSound('success');
+            const b = result.booking;
+            resultDiv.innerHTML = `
+                <div style="background:#E8F5E9;border:2px solid #1A8A72;border-radius:12px;padding:20px;text-align:center">
+                    <div style="width:60px;height:60px;background:#1A8A72;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                        <i class="fas fa-check" style="color:white;font-size:24px"></i>
+                    </div>
+                    <h3 style="color:#1A8A72;margin-bottom:12px">Ticket Valid!</h3>
+                    <div style="background:white;border-radius:8px;padding:12px;text-align:left;margin-bottom:12px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:#888">Passenger</span>
+                            <strong>${result.passenger_name}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:#888">Seat</span>
+                            <strong>#${b.seat_number || 'N/A'}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                            <span style="color:#888">From</span>
+                            <strong>${b.pickup_stop || 'N/A'}</strong>
+                        </div>
+                        <div style="display:flex;justify-content:space-between">
+                            <span style="color:#888">To</span>
+                            <strong>${b.dropoff_stop || 'N/A'}</strong>
+                        </div>
+                    </div>
+                    <button onclick="resumeScanner()" class="btn-primary" style="width:100%">
+                        <i class="fas fa-qrcode"></i> Scan Next Ticket
+                    </button>
+                </div>`;
+        } else {
+            scanInvalidCount++;
+            document.getElementById('scan-invalid-count').textContent = scanInvalidCount;
+            playTicketSound('error');
+            resultDiv.innerHTML = `
+                <div style="background:#FFEBEE;border:2px solid #FF3B30;border-radius:12px;padding:20px;text-align:center">
+                    <div style="width:60px;height:60px;background:#FF3B30;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                        <i class="fas fa-times" style="color:white;font-size:24px"></i>
+                    </div>
+                    <h3 style="color:#FF3B30;margin-bottom:8px">Invalid Ticket</h3>
+                    <p style="color:#666;margin-bottom:16px">${result.reason}</p>
+                    ${result.boarded_at ? `<p style="color:#888;font-size:12px;margin-bottom:16px">Previously scanned at: ${new Date(result.boarded_at).toLocaleString()}</p>` : ''}
+                    <button onclick="resumeScanner()" class="btn-secondary" style="width:100%">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                </div>`;
+        }
+    } catch (err) {
+        scanInvalidCount++;
+        document.getElementById('scan-invalid-count').textContent = scanInvalidCount;
+        resultDiv.innerHTML = `
+            <div style="background:#FFEBEE;border:2px solid #FF3B30;border-radius:12px;padding:20px;text-align:center">
+                <i class="fas fa-exclamation-triangle" style="color:#FF3B30;font-size:32px;margin-bottom:8px"></i>
+                <p style="color:#FF3B30">${err.message || 'Verification failed'}</p>
+                <button onclick="resumeScanner()" class="btn-secondary" style="width:100%;margin-top:12px">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>`;
+    }
+
+    scannerProcessing = false;
+}
+
+function resumeScanner() {
+    document.getElementById('driver-scan-result').innerHTML = '';
+    const input = document.getElementById('manual-ticket-token');
+    if (input) input.value = '';
+    if (html5QrScanner) {
+        try { html5QrScanner.resume(); } catch (e) {}
     }
 }
 
-function scanDriverQRCode() {
-    document.getElementById('driver-scan-result').innerHTML = `
-        <div class="scan-success">
-            <i class="fas fa-check-circle"></i>
-            <h4>Scan result</h4>
-            <p>Ticket verification requires a QR library integration.</p>
-        </div>
-    `;
+function playTicketSound(type) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0.1;
+        osc.frequency.value = type === 'success' ? 880 : 220;
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, type === 'success' ? 200 : 300);
+    } catch (e) {}
 }
 
 // ── PROFILE ─────────────────────────────────────────────────────────────────

@@ -300,6 +300,7 @@ markerStyles.textContent = `
     .status-confirmed { background: #34C759; }
     .status-cancelled { background: #FF3B30; }
     .status-pending { background: #8E8E93; }
+    .status-boarded { background: #007AFF; }
     
     .passenger-header {
         display: flex;

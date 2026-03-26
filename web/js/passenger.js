@@ -636,9 +636,9 @@ function viewTicket(bookingId) {
             document.getElementById('ticket-to').textContent = booking.dropoff_stop;
             document.getElementById('ticket-seat').textContent = booking.seat_number || 'N/A';
             document.getElementById('ticket-departure').textContent = booking.departure_time;
-            document.getElementById('ticket-status').textContent = booking.status;
+            document.getElementById('ticket-status').textContent = formatStatus(booking.status);
             document.getElementById('ticket-ref').textContent = booking.ticket_token || '';
-            generateQRCode(booking.ticket_token || bookingId, 'ticket-qr-canvas');
+            generateQRCode(booking.ticket_token || bookingId);
             document.getElementById('passenger-ticket-modal').classList.add('active');
         })
         .catch(err => showNotification('Could not load ticket: ' + err.message, 'error'));
@@ -719,36 +719,17 @@ function closeModal(modalId) {
     document.getElementById(modalId)?.classList.remove('active');
 }
 
-function generateQRCode(text, canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const size = 120;
-    canvas.width = size;
-    canvas.height = size;
-
-    // White background
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, size, size);
-
-    // Data cells — deterministic from text
-    ctx.fillStyle = '#000';
-    const cells = 10;
-    const cell = size / cells;
-    for (let i = 0; i < cells; i++) {
-        for (let j = 0; j < cells; j++) {
-            const code = text.charCodeAt((i * cells + j) % text.length);
-            if ((code + i * 3 + j * 7) % 3 !== 0) {
-                ctx.fillRect(i * cell, j * cell, cell, cell);
-            }
-        }
-    }
-
-    // Finder pattern — top-left
-    [[0, 0]].forEach(([ox, oy]) => {
-        ctx.fillStyle = '#000'; ctx.fillRect(ox, oy, cell * 3, cell * 3);
-        ctx.fillStyle = '#fff'; ctx.fillRect(ox + cell * 0.5, oy + cell * 0.5, cell * 2, cell * 2);
-        ctx.fillStyle = '#000'; ctx.fillRect(ox + cell, oy + cell, cell, cell);
+function generateQRCode(text) {
+    const container = document.getElementById('ticket-qr-container');
+    if (!container) return;
+    container.innerHTML = '';
+    new QRCode(container, {
+        text: text,
+        width: 180,
+        height: 180,
+        colorDark: '#0D1B2A',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H,
     });
 }
 

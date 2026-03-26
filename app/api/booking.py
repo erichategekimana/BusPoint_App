@@ -180,6 +180,42 @@ def update_booking(booking_id: str):
     return jsonify(booking.to_dict()), 200
 
 
+@booking_bp.post("/bookings/verify")
+@jwt_required()
+@role_required("admin", "driver")
+def verify_ticket():
+    """Scan a ticket token: validate it and mark the passenger as boarded."""
+    payload = request.get_json(silent=True) or {}
+    token = (payload.get("ticket_token") or "").strip()
+    if not token:
+        return jsonify({"error": "ticket_token_required"}), 400
+
+    booking = Booking.query.filter_by(ticket_token=token).first()
+    if not booking:
+        return jsonify({"valid": False, "reason": "Ticket not found. Invalid QR code."}), 200
+
+    if booking.status == "cancelled":
+        return jsonify({"valid": False, "reason": "This booking has been cancelled."}), 200
+
+    if booking.boarded_at is not None:
+        return jsonify({
+            "valid": False,
+            "reason": "This ticket has already been scanned.",
+            "boarded_at": booking.boarded_at.isoformat(),
+        }), 200
+
+    # Mark as boarded
+    booking.boarded_at = datetime.now()
+    booking.status = "boarded"
+    db.session.commit()
+
+    return jsonify({
+        "valid": True,
+        "booking": booking.to_dict(),
+        "passenger_name": booking.user.full_name if booking.user else "Unknown",
+    }), 200
+
+
 @booking_bp.delete("/bookings/<booking_id>")
 @jwt_required()
 @role_required("admin")

@@ -9,6 +9,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@5.0.1/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -387,27 +389,35 @@
         <div id="driver-scanner" class="section">
             <div class="section-header">
                 <h2>QR Code Scanner</h2>
-                <p>Scan passenger tickets</p>
+                <p>Scan passenger tickets to verify boarding</p>
             </div>
-            <div class="scanner-container">
-                <div class="scanner-area">
-                    <video id="driver-scanner-video" autoplay></video>
-                    <div class="scanner-overlay">
-                        <div class="scanner-frame"></div>
+            <div style="max-width:500px;margin:0 auto">
+                <div id="qr-reader" style="width:100%;border-radius:12px;overflow:hidden;margin-bottom:16px"></div>
+                <div class="scanner-controls" style="display:flex;gap:8px;margin-bottom:16px">
+                    <button onclick="startDriverScanner()" class="btn-primary" style="flex:1">
+                        <i class="fas fa-camera"></i> Start Scanner
+                    </button>
+                    <button onclick="stopDriverScanner()" class="btn-secondary" style="flex:1">
+                        <i class="fas fa-stop"></i> Stop Scanner
+                    </button>
+                </div>
+                <div style="text-align:center;color:#8E8E93;margin-bottom:12px;font-size:13px">— or enter ticket token manually —</div>
+                <div style="display:flex;gap:8px;margin-bottom:16px">
+                    <input type="text" id="manual-ticket-token" placeholder="Paste ticket token here" style="flex:1;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:monospace;font-size:13px">
+                    <button onclick="verifyManualToken()" class="btn-primary" style="padding:12px 20px">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+                <div id="driver-scan-result"></div>
+                <div style="display:flex;gap:12px;margin-top:16px">
+                    <div style="flex:1;background:#E8F5E9;border-radius:12px;padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:#1A8A72" id="scan-valid-count">0</div>
+                        <div style="font-size:12px;color:#666">Verified</div>
                     </div>
-                </div>
-                <div class="scanner-controls">
-                    <button onclick="startDriverScanner()" class="btn-primary">
-                        <i class="fas fa-camera"></i>
-                        Start Scanner
-                    </button>
-                    <button onclick="stopDriverScanner()" class="btn-secondary">
-                        <i class="fas fa-stop"></i>
-                        Stop Scanner
-                    </button>
-                </div>
-                <div id="driver-scan-result" class="scan-result">
-                    <!-- Scan results will appear here -->
+                    <div style="flex:1;background:#FFEBEE;border-radius:12px;padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:#FF3B30" id="scan-invalid-count">0</div>
+                        <div style="font-size:12px;color:#666">Invalid</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -827,7 +837,7 @@
                 <button onclick="closeTicketModal()" class="modal-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" style="text-align:center">
-                <canvas id="ticket-qr-canvas" style="border:1px solid #eee;border-radius:8px;margin-bottom:16px"></canvas>
+                <div id="ticket-qr-container" style="display:inline-block;border:1px solid #eee;border-radius:8px;margin-bottom:16px;padding:8px;background:#fff"></div>
                 <div style="background:#f5f5f5;border-radius:10px;padding:14px;text-align:left">
                     <div class="detail-item" style="margin-bottom:8px">
                         <i class="fas fa-location-arrow" style="color:#1A8A72;width:18px"></i>

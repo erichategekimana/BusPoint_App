@@ -56,6 +56,26 @@ INSERT INTO payments (booking_id, amount, currency, payment_method, transaction_
 INSERT INTO bus_locations (bus_id, trip_id, latitude, longitude, speed, heading) VALUES 
 ('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21', 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.9360, 30.1260, 0.0, 90.0);
 
--- 10. NOTIFICATIONS
+-- 10. GPS_PINGS
+-- Simulating a bus traveling from Kimironko to Nyabugogo with pings every few minutes
+INSERT INTO gps_pings (trip_id, latitude, longitude, timestamp, speed_kmh, heading, accuracy_m, nearest_stop_id) VALUES
+-- Ping 1: At Kimironko Park (departure)
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.93600000, 30.12600000, NOW() - INTERVAL '45 minutes', 0.00, 180.00, 5.00, 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a41'),
+-- Ping 2: Between Kimironko and Remera
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.94700000, 30.12050000, NOW() - INTERVAL '40 minutes', 32.50, 210.00, 8.00, NULL),
+-- Ping 3: Approaching Remera Giporoso
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.95500000, 30.11600000, NOW() - INTERVAL '35 minutes', 18.00, 220.00, 4.50, 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42'),
+-- Ping 4: At Remera Giporoso (stop)
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.95800000, 30.11500000, NOW() - INTERVAL '33 minutes', 0.00, 220.00, 3.00, 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a42'),
+-- Ping 5: Between Remera and Gishushu
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.95650000, 30.10500000, NOW() - INTERVAL '25 minutes', 28.00, 260.00, 6.00, NULL),
+-- Ping 6: At Gishushu (stop)
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.95300000, 30.09400000, NOW() - INTERVAL '18 minutes', 0.00, 270.00, 4.00, 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a43'),
+-- Ping 7: Between Gishushu and Nyabugogo
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.94500000, 30.07000000, NOW() - INTERVAL '10 minutes', 35.00, 280.00, 7.00, NULL),
+-- Ping 8: Arriving at Nyabugogo Park
+('e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51', -1.93600000, 30.04400000, NOW() - INTERVAL '2 minutes', 5.00, 290.00, 3.50, 'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44');
+
+-- 11. NOTIFICATIONS
 INSERT INTO notifications (user_id, title, message, type, is_ready) VALUES 
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Ticket Confirmed', 'Your seat for Route 101 is confirmed. Use QR code TK-KGL-101-001.', 'booking_success', true);

@@ -257,8 +257,11 @@ class APIService {
         return this.getBookings({ trip_id: tripId });
     }
 
-    async verifyTicket() {
-        throw new Error('Ticket verification is not yet implemented.');
+    async verifyTicket(ticketToken) {
+        return this.request('/bookings/verify', {
+            method: 'POST',
+            body: JSON.stringify({ ticket_token: ticketToken })
+        });
     }
 
     async updateTripStatus(tripId, status) {
