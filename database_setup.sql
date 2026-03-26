@@ -19,6 +19,7 @@ create table if not exists users
 		unique,
 	password_hash varchar(255) not null,
 	role varchar(20) default 'passenger'::character varying,
+	company varchar(100),
 	created_at timestamp with time zone default CURRENT_TIMESTAMP,
 	updated_at timestamp with time zone default CURRENT_TIMESTAMP
 );
@@ -33,6 +34,7 @@ create table if not exists buses
 	bus_type varchar(50),
 	capacity integer not null,
 	is_active boolean default true,
+	company varchar(100),
 	created_at timestamp with time zone default CURRENT_TIMESTAMP,
 	updated_at timestamp with time zone default CURRENT_TIMESTAMP
 );

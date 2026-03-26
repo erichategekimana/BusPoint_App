@@ -17,6 +17,7 @@ function showAdminDashboard() {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('admin-dashboard').classList.add('active');
     document.getElementById('passenger-dashboard').classList.remove('active');
+    document.getElementById('driver-dashboard').classList.remove('active');
 
     document.getElementById('adminName').textContent = currentUser.full_name;
 
@@ -47,7 +48,7 @@ function loadTodayTrips() {
     const container = document.getElementById('trips-list');
     container.innerHTML = '<div class="text-center">Loading trips…</div>';
 
-    api.getTrips({ assigned_to: currentUser.id })
+    api.getTrips({ company: currentUser.company })
         .then(trips => {
             adminTrips = trips;
             renderTripsList(trips);
@@ -117,7 +118,7 @@ function loadAdminBuses() {
 
     api.getBuses({ is_active: 'true' })
         .then(buses => {
-            const myBuses = buses.filter(b => b.managed_by === currentUser.id);
+            const myBuses = buses.filter(b => b.company && b.company === currentUser.company);
             if (!myBuses.length) {
                 container.innerHTML = '<div class="text-center">No buses assigned to you yet.</div>';
                 return;
@@ -208,7 +209,7 @@ function saveBusForm(event) {
         capacity: capacity,
         make_model: makeModel || null,
         is_active: isActive,
-        managed_by: currentUser.id
+        company: currentUser.company || null
     };
 
     const saveBtn = document.getElementById('bus-form-save-btn');
@@ -263,34 +264,43 @@ function openTripModal(tripId = null) {
     // Show it only when editing with valid transitions
     statusGroup.style.display = tripId ? '' : 'none';
 
-    // Load buses and routes, then optionally populate form fields
+    // Load buses, routes, and drivers, then optionally populate form fields
     Promise.all([
         adminBusList.length ? Promise.resolve(adminBusList) : api.getBuses({ is_active: 'true' }),
-        adminRouteList.length ? Promise.resolve(adminRouteList) : api.getRoutes({ is_active: 'true' })
-    ]).then(([buses, routes]) => {
+        adminRouteList.length ? Promise.resolve(adminRouteList) : api.getRoutes({ is_active: 'true' }),
+        api.request('/users?role=driver').catch(() => [])
+    ]).then(([buses, routes, drivers]) => {
         adminBusList = buses;
         adminRouteList = routes;
 
         const busSelect = document.getElementById('trip-form-bus');
         const routeSelect = document.getElementById('trip-form-route');
+        const driverSelect = document.getElementById('trip-form-driver');
 
-        // Only show buses that have been assigned to an admin (managed_by is set)
-        const managedBuses = buses.filter(b => b.managed_by === currentUser.id);
+        // Only show buses belonging to the admin's company
+        const companyBuses = buses.filter(b => b.company && b.company === currentUser.company);
 
-        if (managedBuses.length === 0) {
+        if (companyBuses.length === 0) {
             busSelect.innerHTML = '<option value="">No buses available</option>';
         } else {
             busSelect.innerHTML = '<option value="">Select bus</option>' +
-                managedBuses.map(b => `<option value="${b.id}">${b.plate_number} (${b.bus_type || 'Bus'}, ${b.capacity} seats)</option>`).join('');
+                companyBuses.map(b => `<option value="${b.id}">${b.plate_number} (${b.bus_type || 'Bus'}, ${b.capacity} seats)</option>`).join('');
         }
 
         routeSelect.innerHTML = '<option value="">Select route</option>' +
             routes.map(r => `<option value="${r.id}">${r.route_code} — ${r.name}</option>`).join('');
 
+        // Populate driver select — show drivers from same company
+        if (driverSelect) {
+            const companyDrivers = drivers.filter(d => d.company && d.company === currentUser.company);
+            driverSelect.innerHTML = '<option value="">Assign to self</option>' +
+                companyDrivers.map(d => `<option value="${d.id}">${d.full_name} (${d.phone_number})</option>`).join('');
+        }
+
         if (tripId) {
             const trip = adminTrips.find(t => t.id === tripId);
             if (trip) {
-                populateTripForm(trip, managedBuses, routes);
+                populateTripForm(trip, companyBuses, routes);
             }
         }
 
@@ -358,6 +368,8 @@ function saveTripForm(event) {
         return;
     }
 
+    const driverId = document.getElementById('trip-form-driver')?.value;
+
     const data = {
         bus_id: busId,
         route_id: routeId,
@@ -368,6 +380,9 @@ function saveTripForm(event) {
             ? document.getElementById('trip-form-status').value
             : 'scheduled'
     };
+    if (driverId) {
+        data.assigned_to = driverId;
+    }
 
     const saveBtn = document.getElementById('trip-form-save-btn');
     saveBtn.disabled = true;

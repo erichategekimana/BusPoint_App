@@ -11,7 +11,8 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), server_default='passenger')
-    
+    company = db.Column(db.String(100), nullable=True)
+
     # func.now() translates directly to CURRENT_TIMESTAMP in PostgreSQL
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -31,5 +32,6 @@ class User(db.Model):
             "phone_number": self.phone_number,
             "email": self.email,
             "role": self.role,
+            "company": self.company,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }

@@ -103,7 +103,7 @@ def create_bus_location():
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role != "admin":
+    if role not in ("admin", "driver"):
         return jsonify({"error": "forbidden"}), 403
 
     payload = request.get_json(silent=True) or {}
@@ -144,7 +144,7 @@ def update_bus_location(location_id: str):
     current_user = g.current_user or {}
     role = current_user.get("role")
 
-    if role != "admin":
+    if role not in ("admin", "driver"):
         return jsonify({"error": "forbidden"}), 403
 
     location_uuid, error = parse_uuid(location_id, "location_id")

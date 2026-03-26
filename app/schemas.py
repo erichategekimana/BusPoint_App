@@ -10,11 +10,12 @@ class RegisterRequest(BaseModel):
     email: EmailStr | None = None
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(default="passenger")
+    company: str | None = Field(default=None, max_length=100)
 
     @field_validator("role")
     @classmethod
     def validate_role(cls, value: str) -> str:
-        allowed = {"passenger", "admin"}
+        allowed = {"passenger", "admin", "driver"}
         role = value.lower().strip()
         if role not in allowed:
             raise ValueError(f"role must be one of {sorted(allowed)}")
@@ -40,6 +41,7 @@ class UserCreateRequest(BaseModel):
     email: EmailStr | None = None
     password: str = Field(min_length=6, max_length=128)
     role: str = Field(default="passenger")
+    company: str | None = Field(default=None, max_length=100)
 
 
 class UserUpdateRequest(BaseModel):
@@ -48,6 +50,7 @@ class UserUpdateRequest(BaseModel):
     email: EmailStr | None = None
     password: str | None = Field(default=None, min_length=6, max_length=128)
     role: str | None = None
+    company: str | None = Field(default=None, max_length=100)
 
 
 class AuthUpdateRequest(BaseModel):
@@ -62,7 +65,7 @@ class BusCreateRequest(BaseModel):
     bus_type: str | None = Field(default=None, max_length=50)
     capacity: int = Field(ge=1)
     is_active: bool | None = None
-    managed_by: UUID | None = None
+    company: str | None = Field(default=None, max_length=100)
 
 
 class BusUpdateRequest(BaseModel):
@@ -70,7 +73,7 @@ class BusUpdateRequest(BaseModel):
     bus_type: str | None = Field(default=None, max_length=50)
     capacity: int | None = Field(default=None, ge=1)
     is_active: bool | None = None
-    managed_by: UUID | None = None
+    company: str | None = Field(default=None, max_length=100)
 
 
 class RouteCreateRequest(BaseModel):

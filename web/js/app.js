@@ -293,7 +293,9 @@ markerStyles.textContent = `
     }
     
     .status-scheduled { background: #F5A623; }
+    .status-in_progress { background: #1A8A72; }
     .status-departed { background: #1A8A72; }
+    .status-completed { background: #34C759; }
     .status-arrived { background: #34C759; }
     .status-confirmed { background: #34C759; }
     .status-cancelled { background: #FF3B30; }

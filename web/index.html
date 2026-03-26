@@ -74,12 +74,17 @@
                         <i class="fas fa-lock"></i>
                     </div>
                     <div class="form-group">
-                        <select id="registerRole" required>
+                        <select id="registerRole" required onchange="toggleCompanyField()">
                             <option value="">Select Role</option>
                             <option value="passenger">Passenger</option>
+                            <option value="driver">Driver</option>
                             <option value="admin">Admin</option>
                         </select>
                         <i class="fas fa-user-tag"></i>
+                    </div>
+                    <div id="company-field" class="form-group" style="display:none">
+                        <input type="text" id="registerCompany" placeholder="Company Name">
+                        <i class="fas fa-building"></i>
                     </div>
                     <button type="submit" class="btn-primary">
                         <span>Create Account</span>
@@ -221,6 +226,114 @@
             </div>
             <div id="notifications-list" class="notifications-list">
                 <!-- Notifications will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Driver Dashboard -->
+    <div id="driver-dashboard" class="dashboard">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-bus"></i>
+                <span>Bus Point Driver</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#" onclick="showDriverSection('trips')" class="nav-item active">
+                    <i class="fas fa-route"></i>
+                    <span>My Trips</span>
+                </a>
+                <a href="#" onclick="showDriverSection('gps')" class="nav-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>GPS Tracking</span>
+                </a>
+            </div>
+            <div class="nav-user">
+                <div class="user-info">
+                    <span id="driverName">Driver</span>
+                    <small>Driver</small>
+                </div>
+                <button onclick="logout()" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Driver Trips Section -->
+        <div id="driver-trips" class="section active">
+            <div class="section-header">
+                <h2>My Assigned Trips</h2>
+                <p>View and manage your assigned trips</p>
+            </div>
+            <div id="driver-trips-list" class="trips-list">
+                <!-- Trips will be populated here -->
+            </div>
+        </div>
+
+        <!-- Driver GPS Section -->
+        <div id="driver-gps" class="section">
+            <div class="section-header">
+                <h2>GPS Tracking</h2>
+                <p>Broadcast your location while on a trip</p>
+            </div>
+
+            <!-- Active trip selector -->
+            <div class="gps-trip-bar">
+                <label for="driver-gps-trip-select"><i class="fas fa-route"></i> Active Trip:</label>
+                <select id="driver-gps-trip-select">
+                    <option value="">— Select your active trip —</option>
+                </select>
+            </div>
+
+            <!-- Live map -->
+            <div class="map-container" style="margin-bottom:16px">
+                <div id="driver-map" class="map"></div>
+                <div class="map-controls">
+                    <button onclick="centerDriverMap()" class="map-btn" title="Center map">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status + controls -->
+            <div class="gps-container">
+                <div class="gps-status">
+                    <div class="status-card">
+                        <h3>Tracking Status</h3>
+                        <div id="driver-gps-status-indicator" class="status-indicator inactive">
+                            <i class="fas fa-circle"></i>
+                            <span>Inactive</span>
+                        </div>
+                    </div>
+                    <div class="location-info">
+                        <div class="info-item">
+                            <label>Latitude:</label>
+                            <span id="driver-current-lat">--</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Longitude:</label>
+                            <span id="driver-current-lng">--</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Speed:</label>
+                            <span id="driver-current-speed">-- km/h</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Last Update:</label>
+                            <span id="driver-last-update">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="gps-controls">
+                    <button onclick="startDriverGPS()" class="btn-primary">
+                        <i class="fas fa-play"></i>
+                        Start Tracking
+                    </button>
+                    <button onclick="stopDriverGPS()" class="btn-secondary">
+                        <i class="fas fa-stop"></i>
+                        Stop Tracking
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -424,6 +537,12 @@
                         <label>Available Seats <span style="color:#FF3B30">*</span></label>
                         <input type="number" id="trip-form-capacity" min="1" placeholder="e.g. 30" required>
                     </div>
+                    <div class="form-group">
+                        <label>Assign Driver <small>(optional — defaults to you)</small></label>
+                        <select id="trip-form-driver">
+                            <option value="">Assign to self</option>
+                        </select>
+                    </div>
                     <div id="trip-form-status-group" class="form-group" style="display:none">
                         <label>Status</label>
                         <select id="trip-form-status">
@@ -584,6 +703,7 @@
     <script src="js/connection-status.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/passenger.js"></script>
+    <script src="js/driver.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/app.js"></script>
 </body>

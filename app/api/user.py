@@ -60,6 +60,8 @@ def register():
         password_hash=hash_password(validated.password),
         role=validated.role or "passenger",
     )
+    if validated.company is not None:
+        user.company = validated.company.strip()
     db.session.add(user)
     db.session.commit()
 
@@ -180,6 +182,8 @@ def create_user():
         password_hash=hash_password(validated.password),
         role=validated.role or "passenger",
     )
+    if validated.company is not None:
+        user.company = validated.company.strip()
     db.session.add(user)
     db.session.commit()
     return jsonify(user.to_dict()), 201
@@ -223,6 +227,8 @@ def update_user(user_id: str):
         user.password_hash = hash_password(validated.password)
     if validated.role is not None:
         user.role = validated.role
+    if validated.company is not None:
+        user.company = validated.company.strip()
 
     db.session.commit()
     return jsonify(user.to_dict()), 200

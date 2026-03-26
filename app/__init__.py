@@ -34,6 +34,10 @@ def create_app() -> Flask:
     def shutdown_session(exception=None):
         db.session.remove()
 
+    # Start departure-reminder background scheduler
+    from .scheduler import init_scheduler
+    init_scheduler(app)
+
     return app
 
 

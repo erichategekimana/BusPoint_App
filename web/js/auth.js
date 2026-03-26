@@ -18,6 +18,8 @@ function checkAuth() {
         // Show appropriate dashboard
         if (currentUser.role === 'passenger') {
             showPassengerDashboard();
+        } else if (currentUser.role === 'driver') {
+            showDriverDashboard();
         } else if (currentUser.role === 'admin') {
             showAdminDashboard();
         }
@@ -70,6 +72,8 @@ function setupAuthForms() {
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
+            } else if (currentUser.role === 'driver') {
+                showDriverDashboard();
             } else if (currentUser.role === 'admin') {
                 showAdminDashboard();
             }
@@ -113,6 +117,7 @@ function setupAuthForms() {
             return;
         }
         
+        const company = document.getElementById('registerCompany')?.value.trim();
         const userData = {
             full_name: fullName,
             phone_number: phoneNumber,
@@ -120,6 +125,9 @@ function setupAuthForms() {
             password: password,
             role: role
         };
+        if (company && (role === 'admin' || role === 'driver')) {
+            userData.company = company;
+        }
         
         const btn = e.target.querySelector('.btn-primary');
         const spinner = btn.querySelector('.fa-spin');
@@ -149,6 +157,8 @@ function setupAuthForms() {
             // Show appropriate dashboard
             if (currentUser.role === 'passenger') {
                 showPassengerDashboard();
+            } else if (currentUser.role === 'driver') {
+                showDriverDashboard();
             } else if (currentUser.role === 'admin') {
                 showAdminDashboard();
             }
@@ -177,9 +187,13 @@ function logout() {
     if (typeof stopGPSTracking === 'function') {
         stopGPSTracking();
     }
-    
+    if (typeof stopDriverGPS === 'function') {
+        stopDriverGPS();
+    }
+
     // Hide dashboards
     document.getElementById('passenger-dashboard').classList.remove('active');
+    document.getElementById('driver-dashboard').classList.remove('active');
     document.getElementById('admin-dashboard').classList.remove('active');
 
     // Clear any leftover form data and show login
@@ -230,3 +244,11 @@ function showNotification(message, type = 'info') {
 }
 
 // MapLibre does not require a global token; style URL + optional API key are handled when building the map.
+
+function toggleCompanyField() {
+    const role = document.getElementById('registerRole').value;
+    const companyField = document.getElementById('company-field');
+    if (companyField) {
+        companyField.style.display = (role === 'admin' || role === 'driver') ? '' : 'none';
+    }
+}

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.auth import jwt_required, role_required
 from app.database import db
-from app.models import Booking, Payment
+from app.models import Booking, Notification, Payment
 
 log = logging.getLogger(__name__)
 
@@ -183,8 +183,25 @@ def check_payment_status(payment_id: str):
                 payment.status = "completed"
                 payment.paid_at = datetime.now(timezone.utc)
                 booking.status = "confirmed"
+                # Send payment confirmation notification
+                notif = Notification(
+                    user_id=booking.user_id,
+                    title="Payment Successful",
+                    message=f"Your payment of {payment.amount} {payment.currency} has been confirmed. Your booking is now confirmed.",
+                    type="payment_success",
+                    is_ready=False,
+                )
+                db.session.add(notif)
             elif momo_status == "FAILED":
                 payment.status = "failed"
+                notif = Notification(
+                    user_id=booking.user_id,
+                    title="Payment Failed",
+                    message="Your MoMo payment was declined. Please try again.",
+                    type="payment_failed",
+                    is_ready=False,
+                )
+                db.session.add(notif)
 
             db.session.commit()
         except Exception as exc:

@@ -11,10 +11,11 @@ class Bus(db.Model):
     bus_type = db.Column(db.String(50))
     capacity = db.Column(db.Integer, nullable=False)
     is_active = db.Column(db.Boolean, server_default='True')
-    managed_by = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    company = db.Column(db.String(100), nullable=True)
     trips = db.relationship('Trip', back_populates='bus')
     location = db.relationship('BusLocation', back_populates='bus', uselist=False)
-    manager = db.relationship('User', foreign_keys=[managed_by])
+
+    # assignee = db.relationship('User', foreign_keys=[company])
 
 
     def to_dict(self):
@@ -24,5 +25,5 @@ class Bus(db.Model):
             "bus_type": self.bus_type,
             "capacity": self.capacity,
             "is_active": self.is_active,
-            "managed_by": str(self.managed_by) if self.managed_by else None,
+            "company": self.company,
         }

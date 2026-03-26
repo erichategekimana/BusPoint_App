@@ -2,16 +2,17 @@
 \c buspoint_db;
 
 -- 1. USERS
--- Inserting a passenger and an admin
-INSERT INTO users (id, full_name, phone_number, email, password_hash, role) VALUES
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Eric Munyaneza', '0788123001', 'eric.m@example.com', 'hash123', 'passenger'),
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Alice Umutoni', '0788123002', 'alice.u@example.com', 'hash456', 'admin');
+-- Inserting a passenger, an admin, and a driver
+INSERT INTO users (id, full_name, phone_number, email, password_hash, role, company) VALUES
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Eric Munyaneza', '0788123001', 'eric.m@example.com', 'hash123', 'passenger', NULL),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Alice Umutoni', '0788123002', 'alice.u@example.com', 'hash456', 'admin', 'Kigali Bus Services'),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'Jean Habimana', '0788123003', 'jean.h@example.com', 'hash789', 'driver', 'Kigali Bus Services');
 
 -- 2. BUSES
 -- Adding a Coaster and a large Yutong bus
-INSERT INTO buses (id, plate_number, bus_type, capacity) VALUES 
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21', 'RAA 100 A', 'Coaster', 30),
-('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'RAB 200 B', 'Yutong', 70);
+INSERT INTO buses (id, plate_number, bus_type, capacity, company) VALUES
+('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21', 'RAA 100 A', 'Coaster', 30, 'Kigali Bus Services'),
+('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'RAB 200 B', 'Yutong', 70, 'Kigali Bus Services');
 
 -- 3. ROUTES
 -- Defining the Kimironko - Nyabugogo line

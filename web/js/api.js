@@ -40,6 +40,7 @@ class APIService {
                 localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_DATA);
 
                 document.getElementById('passenger-dashboard')?.classList.remove('active');
+                document.getElementById('driver-dashboard')?.classList.remove('active');
                 document.getElementById('admin-dashboard')?.classList.remove('active');
                 document.getElementById('loginForm')?.reset();
                 document.getElementById('registerForm')?.reset();
