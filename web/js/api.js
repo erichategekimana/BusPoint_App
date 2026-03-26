@@ -80,6 +80,13 @@ class APIService {
         });
     }
 
+    async updateProfile(data) {
+        return this.request('/auth/update', {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    }
+
     // ── Routes ──────────────────────────────────────────────────────────────
 
     async getRoutes(params = {}) {

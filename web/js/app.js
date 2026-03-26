@@ -518,5 +518,54 @@ markerStyles.textContent = `
         color: #1A8A72;
         margin-right: 8px;
     }
+
+    .profile-container {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 16px;
+        padding: 32px 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-avatar {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .profile-avatar i {
+        font-size: 72px;
+        color: #1A8A72;
+    }
+
+    .profile-card .form-group {
+        margin-bottom: 16px;
+    }
+
+    .profile-card .form-group label {
+        display: block;
+        font-size: 13px;
+        color: #8E8E93;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .profile-card .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #F5F5F5;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+        box-sizing: border-box;
+    }
+
+    .profile-card .form-group input:focus {
+        border-color: #1A8A72;
+        outline: none;
+    }
 `;
 document.head.appendChild(markerStyles);

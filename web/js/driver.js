@@ -34,6 +34,9 @@ function showDriverSection(section) {
         populateDriverGPSTripSelect();
         initDriverGPSMap();
     }
+    if (section !== 'scanner') {
+        stopDriverScanner();
+    }
 }
 
 // ── MY TRIPS ────────────────────────────────────────────────────────────────
@@ -303,4 +306,34 @@ function pushDriverLocationToAPI(tripId, lat, lng, speed, heading) {
             driverGPSLocationId = loc.id;
         }).catch(() => {});
     }
+}
+
+// ── QR SCANNER ──────────────────────────────────────────────────────────────
+
+function startDriverScanner() {
+    const video = document.getElementById('driver-scanner-video');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            video.srcObject = stream;
+            showNotification('Scanner started.', 'success');
+        })
+        .catch(() => showNotification('Camera access denied.', 'error'));
+}
+
+function stopDriverScanner() {
+    const video = document.getElementById('driver-scanner-video');
+    if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+}
+
+function scanDriverQRCode() {
+    document.getElementById('driver-scan-result').innerHTML = `
+        <div class="scan-success">
+            <i class="fas fa-check-circle"></i>
+            <h4>Scan result</h4>
+            <p>Ticket verification requires a QR library integration.</p>
+        </div>
+    `;
 }

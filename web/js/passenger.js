@@ -47,6 +47,7 @@ function showPassengerSection(section) {
     if (section === 'search') loadSearchStops();
     if (section === 'bookings') loadUserBookings();
     if (section === 'notifications') loadNotifications();
+    if (section === 'profile') loadProfile();
 }
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ function populateStopOptions(stops) {
 
     const prevFrom = fromSel.value;
     const prevTo = toSel.value;
-    const opts = ['<option value="">Select stop</option>']
+    const opts = ['<option value="">Select start</option>']
         .concat(stops.map(s => `<option value="${s.id}">${s.name}</option>`))
         .join('');
 
@@ -731,3 +732,49 @@ function generateQRCode(text, canvasId) {
         ctx.fillStyle = '#000'; ctx.fillRect(ox + cell, oy + cell, cell, cell);
     });
 }
+
+// ── PROFILE ──────────────────────────────────────────────────────────────────
+
+function loadProfile() {
+    if (!currentUser) return;
+    document.getElementById('profile-name').value = currentUser.full_name || '';
+    document.getElementById('profile-email').value = currentUser.email || '';
+    document.getElementById('profile-phone').value = currentUser.phone_number || '';
+    document.getElementById('profile-password').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {};
+            const name = document.getElementById('profile-name').value.trim();
+            const email = document.getElementById('profile-email').value.trim();
+            const phone = document.getElementById('profile-phone').value.trim();
+            const password = document.getElementById('profile-password').value;
+
+            if (name && name !== currentUser.full_name) data.full_name = name;
+            if (email && email !== currentUser.email) data.email = email;
+            if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
+            if (password) data.password = password;
+
+            if (Object.keys(data).length === 0) {
+                showNotification('No changes to save.', 'info');
+                return;
+            }
+
+            try {
+                const updated = await api.updateProfile(data);
+                // Update local state
+                currentUser = { ...currentUser, ...updated };
+                localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+                document.getElementById('userName').textContent = currentUser.full_name;
+                document.getElementById('profile-password').value = '';
+                showNotification('Profile updated successfully!', 'success');
+            } catch (err) {
+                showNotification(err.message || 'Failed to update profile.', 'error');
+            }
+        });
+    }
+});
