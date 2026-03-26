@@ -9,6 +9,11 @@ let bookingContext = null;         // { tripId, fromStopId, toStopId }
 let pendingBooking = null;         // booking object awaiting payment
 let selectedPaymentMethod = 'mtn';
 
+function formatStatus(status) {
+    if (!status) return '';
+    return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // ── DASHBOARD ENTRY ──────────────────────────────────────────────────────────
 
 function showPassengerDashboard() {
@@ -28,6 +33,7 @@ function showPassengerDashboard() {
     loadSearchStops();
     loadUserBookings();
     loadNotifications();
+    updateNotifBadge();
 }
 
 function showPassengerSection(section) {
@@ -295,9 +301,6 @@ function displayTripResults(trips, fromStopId, toStopId) {
         const stops = trip.route_info?.matched_segment?.length || '?';
         const mins = trip.route_info?.estimated_minutes || '?';
         const occupied = trip.current_capacity || 0;
-        const statusClass = trip.status === 'scheduled' ? 'status-scheduled'
-            : trip.status === 'in_progress' ? 'status-active' : 'status-cancelled';
-
         return `
             <div class="trip-card">
                 <div class="trip-header">
@@ -305,7 +308,7 @@ function displayTripResults(trips, fromStopId, toStopId) {
                         <div class="trip-time">${depStr}</div>
                         <div class="trip-route">${trip.route_info?.name || 'Route'} · ${depDate}</div>
                     </div>
-                    <span class="status-badge ${statusClass}">${trip.status}</span>
+                    <span class="status-badge status-${trip.status}">${formatStatus(trip.status)}</span>
                 </div>
                 <div class="trip-details">
                     <div class="detail-item">
@@ -361,7 +364,7 @@ function openBookingModal(tripId, fromStopId, toStopId) {
                         <span><strong>${getStopName(fromStopId)}</strong> → <strong>${getStopName(toStopId)}</strong></span>
                     </div>
                     <div class="detail-item"><i class="fas fa-calendar"></i><span>${dep}</span></div>
-                    <div class="detail-item"><i class="fas fa-info-circle"></i><span>Status: ${trip.status}</span></div>
+                    <div class="detail-item"><i class="fas fa-info-circle"></i><span>Status: ${formatStatus(trip.status)}</span></div>
                     <div class="detail-item"><i class="fas fa-tag"></i><span>Fare: 500 RWF</span></div>
                 </div>`;
 
@@ -596,8 +599,8 @@ function loadUserBookings() {
 }
 
 function renderBookingCard(booking) {
-    const statusClass = booking.status === 'confirmed' ? 'status-scheduled'
-        : booking.status === 'cancelled' ? 'status-cancelled' : 'status-active';
+    const statusClass = booking.status === 'confirmed' ? 'status-confirmed'
+        : booking.status === 'cancelled' ? 'status-cancelled' : `status-${booking.status}`;
     const token = (booking.ticket_token || '').slice(0, 12) + '…';
     const canCancel = booking.status === 'pending' || booking.status === 'confirmed';
 
@@ -608,7 +611,7 @@ function renderBookingCard(booking) {
                     <div class="trip-time">Seat ${booking.seat_number || '—'}</div>
                     <div class="trip-route">${booking.pickup_stop} → ${booking.dropoff_stop}</div>
                 </div>
-                <span class="status-badge ${statusClass}">${booking.status}</span>
+                <span class="status-badge ${statusClass}">${formatStatus(booking.status)}</span>
             </div>
             <div class="trip-details">
                 <div class="detail-item"><i class="fas fa-ticket-alt"></i><span>Ref: ${token}</span></div>
@@ -657,6 +660,21 @@ function cancelBooking(bookingId) {
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
 
+function updateNotifBadge() {
+    api.getUnreadNotificationCount()
+        .then(data => {
+            const badge = document.getElementById('notif-badge');
+            if (!badge) return;
+            if (data.count > 0) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(() => {});
+}
+
 function loadNotifications() {
     const container = document.getElementById('notifications-list');
     if (!container) return;
@@ -664,6 +682,7 @@ function loadNotifications() {
 
     api.getUserNotifications()
         .then(notifications => {
+            updateNotifBadge();
             if (notifications.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-bell fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>No notifications yet.</p></div>';
                 return;
@@ -673,7 +692,7 @@ function loadNotifications() {
                     <div class="trip-header">
                         <div>
                             <div class="trip-time">${n.title}</div>
-                            <div class="trip-route">${n.type || 'notification'}</div>
+                            <div class="trip-route">${formatStatus(n.type || 'notification')}</div>
                         </div>
                         ${!n.is_ready
                             ? `<button onclick="markNotificationRead('${n.id}')" class="btn-secondary" style="padding:4px 10px;font-size:12px">Mark read</button>`
@@ -752,12 +771,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('profile-name').value.trim();
             const email = document.getElementById('profile-email').value.trim();
             const phone = document.getElementById('profile-phone').value.trim();
+            const currentPwd = document.getElementById('profile-current-password').value;
             const password = document.getElementById('profile-password').value;
 
             if (name && name !== currentUser.full_name) data.full_name = name;
             if (email && email !== currentUser.email) data.email = email;
             if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
-            if (password) data.password = password;
+            if (password) {
+                if (!currentPwd) {
+                    showNotification('Please enter your current password to change it.', 'error');
+                    return;
+                }
+                data.current_password = currentPwd;
+                data.password = password;
+            }
 
             if (Object.keys(data).length === 0) {
                 showNotification('No changes to save.', 'info');
@@ -770,6 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentUser = { ...currentUser, ...updated };
                 localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
                 document.getElementById('userName').textContent = currentUser.full_name;
+                document.getElementById('profile-current-password').value = '';
                 document.getElementById('profile-password').value = '';
                 showNotification('Profile updated successfully!', 'success');
             } catch (err) {

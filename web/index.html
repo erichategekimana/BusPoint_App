@@ -120,12 +120,12 @@
                     <i class="fas fa-ticket-alt"></i>
                     <span>My Bookings</span>
                 </a>
-                <a href="#" onclick="showPassengerSection('notifications')" class="nav-item">
-                    <i class="fas fa-bell"></i>
-                    <span>Notifications</span>
-                </a>
             </div>
             <div class="nav-user">
+                <button onclick="showPassengerSection('notifications')" class="nav-icon-btn" title="Notifications">
+                    <i class="fas fa-bell"></i>
+                    <span id="notif-badge" class="notif-badge" style="display:none">0</span>
+                </button>
                 <div class="user-info" onclick="showPassengerSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="userName">John Doe</span>
                     <small>Passenger</small>
@@ -253,9 +253,15 @@
                             <label>Phone Number</label>
                             <input type="tel" id="profile-phone" placeholder="Phone Number" required>
                         </div>
+                        <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
+                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
                         <div class="form-group">
-                            <label>New Password <small>(leave blank to keep current)</small></label>
-                            <input type="password" id="profile-password" placeholder="New Password">
+                            <label>Current Password</label>
+                            <input type="password" id="profile-current-password" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="profile-password" placeholder="Enter new password">
                         </div>
                         <button type="submit" class="btn-primary" style="width:100%">
                             <i class="fas fa-save"></i> Save Changes
@@ -289,7 +295,7 @@
                 </a>
             </div>
             <div class="nav-user">
-                <div class="user-info">
+                <div class="user-info" onclick="showDriverSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="driverName">Driver</span>
                     <small>Driver</small>
                 </div>
@@ -405,6 +411,48 @@
                 </div>
             </div>
         </div>
+
+        <!-- Driver Profile Section -->
+        <div id="driver-profile" class="section">
+            <div class="section-header">
+                <h2>My Profile</h2>
+                <p>View and update your account details</p>
+            </div>
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <form id="driver-profile-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="driver-profile-name" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="driver-profile-email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="driver-profile-phone" placeholder="Phone Number" required>
+                        </div>
+                        <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
+                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" id="driver-profile-current-password" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="driver-profile-password" placeholder="Enter new password">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width:100%">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Admin Dashboard -->
@@ -428,9 +476,13 @@
                     <i class="fas fa-map-marker-alt"></i>
                     <span>GPS Tracking</span>
                 </a>
+                <a href="#" onclick="showAdminSection('notifications')" class="nav-item">
+                    <i class="fas fa-bell"></i>
+                    <span>Notify</span>
+                </a>
             </div>
             <div class="nav-user">
-                <div class="user-info">
+                <div class="user-info" onclick="showAdminSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="adminName">Admin</span>
                     <small>Admin</small>
                 </div>
@@ -533,6 +585,73 @@
                         <i class="fas fa-stop"></i>
                         Stop Tracking
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Notifications Section -->
+        <div id="admin-notifications" class="section">
+            <div class="section-header">
+                <h2>Broadcast Notification</h2>
+                <p>Send a notification to all passengers</p>
+            </div>
+            <div class="profile-container">
+                <div class="profile-card">
+                    <form id="broadcast-notification-form">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="broadcast-title" placeholder="Notification title" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea id="broadcast-message" placeholder="Write your message to all passengers..." rows="4" required style="width:100%;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width:100%">
+                            <i class="fas fa-paper-plane"></i> Send to All Passengers
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Profile Section -->
+        <div id="admin-profile" class="section">
+            <div class="section-header">
+                <h2>My Profile</h2>
+                <p>View and update your account details</p>
+            </div>
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <form id="admin-profile-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="admin-profile-name" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="admin-profile-email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="admin-profile-phone" placeholder="Phone Number" required>
+                        </div>
+                        <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
+                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" id="admin-profile-current-password" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="admin-profile-password" placeholder="Enter new password">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width:100%">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

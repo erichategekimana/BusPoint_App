@@ -37,6 +37,7 @@ function showDriverSection(section) {
     if (section !== 'scanner') {
         stopDriverScanner();
     }
+    if (section === 'profile') loadDriverProfile();
 }
 
 // ── MY TRIPS ────────────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ function renderDriverTripsList(trips) {
                     <div class="trip-time">${formatDriverDateTime(trip.departure_time)}</div>
                     <div class="trip-route">${trip.route_name}</div>
                 </div>
-                <span class="status-badge status-${trip.status}">${trip.status}</span>
+                <span class="status-badge status-${trip.status}">${trip.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
             </div>
             <div class="trip-details">
                 <div class="detail-item">
@@ -102,7 +103,7 @@ function renderDriverTripsList(trips) {
                     <i class="fas fa-stop"></i> Complete Trip
                 </button>` : ''}
                 ${isDone ? `
-                <span style="color:#888;font-size:13px;padding:8px">Trip ${trip.status}</span>` : ''}
+                <span style="color:#888;font-size:13px;padding:8px">Trip ${trip.status.replace(/_/g, ' ')}</span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -337,3 +338,58 @@ function scanDriverQRCode() {
         </div>
     `;
 }
+
+// ── PROFILE ─────────────────────────────────────────────────────────────────
+
+function loadDriverProfile() {
+    if (!currentUser) return;
+    document.getElementById('driver-profile-name').value = currentUser.full_name || '';
+    document.getElementById('driver-profile-email').value = currentUser.email || '';
+    document.getElementById('driver-profile-phone').value = currentUser.phone_number || '';
+    document.getElementById('driver-profile-current-password').value = '';
+    document.getElementById('driver-profile-password').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('driver-profile-form');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {};
+            const name = document.getElementById('driver-profile-name').value.trim();
+            const email = document.getElementById('driver-profile-email').value.trim();
+            const phone = document.getElementById('driver-profile-phone').value.trim();
+            const currentPwd = document.getElementById('driver-profile-current-password').value;
+            const password = document.getElementById('driver-profile-password').value;
+
+            if (name && name !== currentUser.full_name) data.full_name = name;
+            if (email && email !== currentUser.email) data.email = email;
+            if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
+            if (password) {
+                if (!currentPwd) {
+                    showNotification('Please enter your current password to change it.', 'error');
+                    return;
+                }
+                data.current_password = currentPwd;
+                data.password = password;
+            }
+
+            if (Object.keys(data).length === 0) {
+                showNotification('No changes to save.', 'info');
+                return;
+            }
+
+            try {
+                const updated = await api.updateProfile(data);
+                currentUser = { ...currentUser, ...updated };
+                localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+                document.getElementById('driverName').textContent = currentUser.full_name;
+                document.getElementById('driver-profile-current-password').value = '';
+                document.getElementById('driver-profile-password').value = '';
+                showNotification('Profile updated successfully!', 'success');
+            } catch (err) {
+                showNotification(err.message || 'Failed to update profile.', 'error');
+            }
+        });
+    }
+});

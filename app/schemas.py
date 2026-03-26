@@ -57,6 +57,7 @@ class AuthUpdateRequest(BaseModel):
     full_name: str | None = Field(default=None, min_length=2, max_length=100)
     phone_number: str | None = Field(default=None, min_length=7, max_length=15)
     email: EmailStr | None = None
+    current_password: str | None = Field(default=None, min_length=1, max_length=128)
     password: str | None = Field(default=None, min_length=6, max_length=128)
 
 

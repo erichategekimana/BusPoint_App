@@ -240,6 +240,17 @@ class APIService {
         });
     }
 
+    async broadcastNotification(data) {
+        return this.request('/notifications/broadcast', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async getUnreadNotificationCount() {
+        return this.request('/notifications/unread-count');
+    }
+
     // ── Manifests / legacy stubs ──────────────────────────────────────────────
 
     async getTripManifest(tripId) {

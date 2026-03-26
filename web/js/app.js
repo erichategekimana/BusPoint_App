@@ -299,6 +299,7 @@ markerStyles.textContent = `
     .status-arrived { background: #34C759; }
     .status-confirmed { background: #34C759; }
     .status-cancelled { background: #FF3B30; }
+    .status-pending { background: #8E8E93; }
     
     .passenger-header {
         display: flex;
@@ -517,6 +518,39 @@ markerStyles.textContent = `
     .booking-details i {
         color: #1A8A72;
         margin-right: 8px;
+    }
+
+    .nav-icon-btn {
+        background: none;
+        border: none;
+        color: #8E8E93;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .nav-icon-btn:hover {
+        color: #1A8A72;
+        background: rgba(26, 138, 114, 0.1);
+    }
+
+    .notif-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #FF3B30;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+        border-radius: 8px;
+        text-align: center;
+        padding: 0 4px;
     }
 
     .profile-container {

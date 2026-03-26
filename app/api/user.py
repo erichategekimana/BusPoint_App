@@ -128,6 +128,10 @@ def update_me():
     if validated.email is not None:
         user.email = str(validated.email)
     if validated.password is not None:
+        if not validated.current_password:
+            return jsonify({"error": "current_password_required"}), 400
+        if not verify_password(user.password_hash, validated.current_password):
+            return jsonify({"error": "current_password_incorrect"}), 403
         user.password_hash = hash_password(validated.password)
 
     db.session.commit()

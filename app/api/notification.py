@@ -21,6 +21,12 @@ class NotificationCreateRequest(BaseModel):
     is_ready: bool | None = None
 
 
+class BroadcastNotificationRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    message: str = Field(min_length=1)
+    type: str | None = Field(default="broadcast", max_length=50)
+
+
 class NotificationUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     message: str | None = Field(default=None, min_length=1)
@@ -172,6 +178,43 @@ def update_notification(notification_id: str):
 
     db.session.commit()
     return jsonify(notification_to_dict(notification)), 200
+
+
+@notification_bp.post("/notifications/broadcast")
+@jwt_required()
+@role_required("admin")
+def broadcast_notification():
+    payload = request.get_json(silent=True) or {}
+    validated, error = validate_payload(BroadcastNotificationRequest, payload)
+    if error:
+        return error
+
+    passengers = User.query.filter_by(role="passenger").all()
+    if not passengers:
+        return jsonify({"error": "no_passengers_found"}), 404
+
+    created = []
+    for passenger in passengers:
+        notification = Notification(
+            user_id=passenger.id,
+            title=validated.title.strip(),
+            message=validated.message.strip(),
+            type=validated.type or "broadcast",
+        )
+        db.session.add(notification)
+        created.append(notification)
+
+    db.session.commit()
+    return jsonify({"status": "sent", "count": len(created)}), 201
+
+
+@notification_bp.get("/notifications/unread-count")
+@jwt_required()
+def unread_count():
+    current_user = g.current_user or {}
+    own_uuid = UUID(current_user.get("user_id"))
+    count = Notification.query.filter_by(user_id=own_uuid, is_ready=False).count()
+    return jsonify({"count": count}), 200
 
 
 @notification_bp.delete("/notifications/<notification_id>")
