@@ -22,18 +22,7 @@ class Trip(db.Model):
     assignee = db.relationship('User', foreign_keys=[assigned_to])
     bookings = db.relationship('Booking', back_populates='trip', cascade='all, delete-orphan', passive_deletes=True)
     locations = db.relationship('BusLocation', back_populates='trip', cascade='all, delete-orphan', passive_deletes=True, lazy=True)
-    pings = db.relationship('GpsPing', back_populates='trip', cascade='all, delete-orphan', passive_deletes=True, order_by='GpsPing.timestamp', lazy=True)
 
-    @property
-    def latest_ping(self):
-        """Return the most recent GPS ping for this trip (for live map display)."""
-        from app.models.gps_ping_model import GpsPing
-        return (
-            GpsPing.query
-            .filter_by(trip_id=self.id)
-            .order_by(GpsPing.timestamp.desc())
-            .first()
-        )
 
     def to_dict(self):
         return {
