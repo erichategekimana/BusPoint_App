@@ -28,74 +28,74 @@
     <div id="auth-section" class="auth-section">
         <div class="auth-container">
             <div class="auth-header">
-                <h1>Bus Point</h1>
-                <p>Rwanda's Smart Bus Booking System</p>
+                <h1 data-i18n="app_name">Bus Point</h1>
+                <p data-i18n="app_tagline">Rwanda's Smart Bus Booking System</p>
             </div>
 
             <!-- Login Form -->
             <div id="login-form" class="auth-form active">
-                <h2>Welcome Back</h2>
+                <h2 data-i18n="welcome_back">Welcome Back</h2>
                 <form id="loginForm">
                     <div class="form-group">
-                        <input type="email" id="loginEmail" placeholder="Email" required>
+                        <input type="email" id="loginEmail" placeholder="Email" data-i18n-placeholder="ph_email" required>
                         <i class="fas fa-envelope"></i>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <input type="password" id="loginPassword" placeholder="Password" data-i18n-placeholder="ph_password" required>
                         <i class="fas fa-lock"></i>
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span>Sign In</span>
+                        <span data-i18n="sign_in">Sign In</span>
                         <i class="fas fa-spinner fa-spin" style="display: none;"></i>
                     </button>
                 </form>
                 <p class="auth-switch">
-                    Don't have an account? 
-                    <a href="#" onclick="showRegister()">Sign up</a>
+                    <span data-i18n="no_account">Don't have an account?</span>
+                    <a href="#" onclick="showRegister()" data-i18n="sign_up">Sign up</a>
                 </p>
             </div>
 
             <!-- Register Form -->
             <div id="register-form" class="auth-form">
-                <h2>Create Account</h2>
+                <h2 data-i18n="create_account">Create Account</h2>
                 <form id="registerForm">
                     <div class="form-group">
-                        <input type="text" id="registerName" placeholder="Full Name" required>
+                        <input type="text" id="registerName" placeholder="Full Name" data-i18n-placeholder="ph_full_name" required>
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="form-group">
-                        <input type="tel" id="registerPhone" placeholder="Phone Number" required>
+                        <input type="tel" id="registerPhone" placeholder="Phone Number" data-i18n-placeholder="ph_phone" required>
                         <i class="fas fa-phone"></i>
                     </div>
                     <div class="form-group">
-                        <input type="email" id="registerEmail" placeholder="Email" required>
+                        <input type="email" id="registerEmail" placeholder="Email" data-i18n-placeholder="ph_email" required>
                         <i class="fas fa-envelope"></i>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="registerPassword" placeholder="Password" required>
+                        <input type="password" id="registerPassword" placeholder="Password" data-i18n-placeholder="ph_password" required>
                         <i class="fas fa-lock"></i>
                     </div>
                     <div class="form-group">
                         <select id="registerRole" required onchange="toggleCompanyField()">
-                            <option value="">Select Role</option>
-                            <option value="passenger">Passenger</option>
-                            <option value="driver">Driver</option>
-                            <option value="admin">Admin</option>
+                            <option value="" data-i18n="select_role">Select Role</option>
+                            <option value="passenger" data-i18n="role_passenger">Passenger</option>
+                            <option value="driver" data-i18n="role_driver">Driver</option>
+                            <option value="admin" data-i18n="role_admin">Admin</option>
                         </select>
                         <i class="fas fa-user-tag"></i>
                     </div>
                     <div id="company-field" class="form-group" style="display:none">
-                        <input type="text" id="registerCompany" placeholder="Company Name">
+                        <input type="text" id="registerCompany" placeholder="Company Name" data-i18n-placeholder="ph_company">
                         <i class="fas fa-building"></i>
                     </div>
                     <button type="submit" class="btn-primary">
-                        <span>Create Account</span>
+                        <span data-i18n="create_account">Create Account</span>
                         <i class="fas fa-spinner fa-spin" style="display: none;"></i>
                     </button>
                 </form>
                 <p class="auth-switch">
-                    Already have an account? 
-                    <a href="#" onclick="showLogin()">Sign in</a>
+                    <span data-i18n="have_account">Already have an account?</span>
+                    <a href="#" onclick="showLogin()" data-i18n="sign_in_link">Sign in</a>
                 </p>
             </div>
         </div>
@@ -107,20 +107,20 @@
         <nav class="navbar">
             <div class="nav-brand">
                 <i class="fas fa-bus"></i>
-                <span>Bus Point</span>
+                <span data-i18n="app_name">Bus Point</span>
             </div>
             <div class="nav-menu">
                 <a href="#" onclick="showPassengerSection('home')" class="nav-item active">
                     <i class="fas fa-home"></i>
-                    <span>Home</span>
+                    <span data-i18n="nav_home">Home</span>
                 </a>
                 <a href="#" onclick="showPassengerSection('search')" class="nav-item">
                     <i class="fas fa-search"></i>
-                    <span>Search</span>
+                    <span data-i18n="nav_search">Search</span>
                 </a>
                 <a href="#" onclick="showPassengerSection('bookings')" class="nav-item">
                     <i class="fas fa-ticket-alt"></i>
-                    <span>My Bookings</span>
+                    <span data-i18n="nav_my_bookings">My Bookings</span>
                 </a>
             </div>
             <div class="nav-user">
@@ -130,8 +130,9 @@
                 </button>
                 <div class="user-info" onclick="showPassengerSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="userName">John Doe</span>
-                    <small>Passenger</small>
+                    <small data-i18n="nav_passenger">Passenger</small>
                 </div>
+                <button onclick="toggleLang()" class="btn-logout lang-btn" id="lang-btn-passenger" style="font-size:11px;font-weight:700;letter-spacing:.5px;min-width:32px" title="Switch Language / Hindura Ururimi">RW</button>
                 <button onclick="logout()" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
@@ -141,8 +142,8 @@
         <!-- Passenger Home Section -->
         <div id="passenger-home" class="section active">
             <div class="section-header">
-                <h2>Live Bus Tracking</h2>
-                <p>Real-time bus locations across Rwanda</p>
+                <h2 data-i18n="heading_live_tracking">Live Bus Tracking</h2>
+                <p data-i18n="sub_live_tracking">Real-time bus locations across Rwanda</p>
             </div>
             <div class="map-container">
                 <div id="passenger-map" class="map"></div>
@@ -158,48 +159,42 @@
             <div class="quick-actions">
                 <button onclick="showPassengerSection('search')" class="action-btn">
                     <i class="fas fa-search"></i>
-                    <span>Search Routes</span>
+                    <span data-i18n="heading_search">Search Routes</span>
                 </button>
                 <button onclick="showPassengerSection('bookings')" class="action-btn">
                     <i class="fas fa-ticket-alt"></i>
-                    <span>My Bookings</span>
+                    <span data-i18n="heading_my_bookings">My Bookings</span>
                 </button>
             </div>
         </div>
         <!-- Passenger Search Section -->
         <div id="passenger-search" class="section">
             <div class="section-header">
-                <h2>Search Routes</h2>
-                <p>Find and book your perfect trip</p>
+                <h2 data-i18n="heading_search">Search Routes</h2>
+                <p data-i18n="sub_search">Find and book your perfect trip</p>
             </div>
             <div class="search-container">
                 <div class="search-form">
                     <div class="form-row">
                         <div class="form-group">
-                            <label>From</label>
+                            <label data-i18n="label_from">From</label>
                             <select id="fromLocation">
-                                <option value="">Select departure</option>
-                                <option value="kigali">Kigali</option>
-                                <option value="musanze">Musanze</option>
-                                <option value="huye">Huye</option>
+                                <option value="" data-i18n="ph_select_departure">Select departure</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>To</label>
+                            <label data-i18n="label_to">To</label>
                             <select id="toLocation">
-                                <option value="">Select destination</option>
-                                <option value="kigali">Kigali</option>
-                                <option value="musanze">Musanze</option>
-                                <option value="huye">Huye</option>
+                                <option value="" data-i18n="ph_select_destination">Select destination</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Date</label>
+                            <label data-i18n="label_date">Date</label>
                             <input type="date" id="travelDate">
                         </div>
                         <button onclick="searchTrips()" class="btn-primary">
                             <i class="fas fa-search"></i>
-                            Search
+                            <span data-i18n="btn_search">Search</span>
                         </button>
                     </div>
                 </div>
@@ -212,8 +207,8 @@
         <!-- Passenger Bookings Section -->
         <div id="passenger-bookings" class="section">
             <div class="section-header">
-                <h2>My Bookings</h2>
-                <p>View and manage your tickets</p>
+                <h2 data-i18n="heading_my_bookings">My Bookings</h2>
+                <p data-i18n="sub_my_bookings">View and manage your tickets</p>
             </div>
             <div id="bookings-list" class="bookings-list">
                 <!-- Bookings will be populated here -->
@@ -223,8 +218,8 @@
         <!-- Passenger Notifications Section -->
         <div id="passenger-notifications" class="section">
             <div class="section-header">
-                <h2>Notifications</h2>
-                <p>Stay updated with your trips</p>
+                <h2 data-i18n="heading_notifications">Notifications</h2>
+                <p data-i18n="sub_notifications">Stay updated with your trips</p>
             </div>
             <div id="notifications-list" class="notifications-list">
                 <!-- Notifications will be populated here -->
@@ -234,8 +229,8 @@
         <!-- Passenger Profile Section -->
         <div id="passenger-profile" class="section">
             <div class="section-header">
-                <h2>My Profile</h2>
-                <p>View and update your account details</p>
+                <h2 data-i18n="heading_my_profile">My Profile</h2>
+                <p data-i18n="sub_my_profile">View and update your account details</p>
             </div>
             <div class="profile-container">
                 <div class="profile-card">
@@ -244,29 +239,29 @@
                     </div>
                     <form id="profile-form">
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="profile-name" placeholder="Full Name" required>
+                            <label data-i18n="label_full_name">Full Name</label>
+                            <input type="text" id="profile-name" placeholder="Full Name" data-i18n-placeholder="ph_full_name" required>
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="profile-email" placeholder="Email" required>
+                            <label data-i18n="label_email">Email</label>
+                            <input type="email" id="profile-email" placeholder="Email" data-i18n-placeholder="ph_email" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="profile-phone" placeholder="Phone Number" required>
+                            <label data-i18n="label_phone">Phone Number</label>
+                            <input type="tel" id="profile-phone" placeholder="Phone Number" data-i18n-placeholder="ph_phone" required>
                         </div>
                         <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
-                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
+                        <h4 style="color:#0D1B2A;margin-bottom:12px" data-i18n="label_change_password">Change Password</h4>
                         <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="profile-current-password" placeholder="Enter current password">
+                            <label data-i18n="label_current_password">Current Password</label>
+                            <input type="password" id="profile-current-password" placeholder="Enter current password" data-i18n-placeholder="ph_current_password">
                         </div>
                         <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="profile-password" placeholder="Enter new password">
+                            <label data-i18n="label_new_password">New Password</label>
+                            <input type="password" id="profile-password" placeholder="Enter new password" data-i18n-placeholder="ph_new_password">
                         </div>
                         <button type="submit" class="btn-primary" style="width:100%">
-                            <i class="fas fa-save"></i> Save Changes
+                            <i class="fas fa-save"></i> <span data-i18n="btn_save_changes">Save Changes</span>
                         </button>
                     </form>
                 </div>
@@ -280,23 +275,24 @@
         <nav class="navbar">
             <div class="nav-brand">
                 <i class="fas fa-bus"></i>
-                <span>Bus Point Driver</span>
+                <span data-i18n="app_name">Bus Point</span>
             </div>
             <div class="nav-menu">
                 <a href="#" onclick="showDriverSection('trips')" class="nav-item active">
                     <i class="fas fa-route"></i>
-                    <span>My Trips</span>
+                    <span data-i18n="nav_my_trips">My Trips</span>
                 </a>
                 <a href="#" onclick="showDriverSection('scanner')" class="nav-item">
                     <i class="fas fa-qrcode"></i>
-                    <span>QR Scanner</span>
+                    <span data-i18n="nav_qr_scanner">QR Scanner</span>
                 </a>
             </div>
             <div class="nav-user">
                 <div class="user-info" onclick="showDriverSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="driverName">Driver</span>
-                    <small>Driver</small>
+                    <small data-i18n="nav_driver">Driver</small>
                 </div>
+                <button onclick="toggleLang()" class="btn-logout lang-btn" id="lang-btn-driver" style="font-size:11px;font-weight:700;letter-spacing:.5px;min-width:32px" title="Switch Language / Hindura Ururimi">RW</button>
                 <button onclick="logout()" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
@@ -306,8 +302,8 @@
         <!-- Driver Trips Section -->
         <div id="driver-trips" class="section active">
             <div class="section-header">
-                <h2>My Assigned Trips</h2>
-                <p>View and manage your assigned trips</p>
+                <h2 data-i18n="heading_my_assigned_trips">My Assigned Trips</h2>
+                <p data-i18n="sub_my_assigned_trips">View and manage your assigned trips</p>
             </div>
             <div id="driver-trips-list" class="trips-list">
                 <!-- Trips will be populated here -->
@@ -317,22 +313,22 @@
         <!-- Driver Scanner Section -->
         <div id="driver-scanner" class="section">
             <div class="section-header">
-                <h2>QR Code Scanner</h2>
-                <p>Scan passenger tickets to verify boarding</p>
+                <h2 data-i18n="heading_qr_scanner">QR Code Scanner</h2>
+                <p data-i18n="sub_qr_scanner">Scan passenger tickets to verify boarding</p>
             </div>
             <div style="max-width:500px;margin:0 auto">
                 <div id="qr-reader" style="width:100%;border-radius:12px;overflow:hidden;margin-bottom:16px"></div>
                 <div class="scanner-controls" style="display:flex;gap:8px;margin-bottom:16px">
                     <button onclick="startDriverScanner()" class="btn-primary" style="flex:1">
-                        <i class="fas fa-camera"></i> Start Scanner
+                        <i class="fas fa-camera"></i> <span data-i18n="btn_start_scanner">Start Scanner</span>
                     </button>
                     <button onclick="stopDriverScanner()" class="btn-secondary" style="flex:1">
-                        <i class="fas fa-stop"></i> Stop Scanner
+                        <i class="fas fa-stop"></i> <span data-i18n="btn_stop_scanner">Stop Scanner</span>
                     </button>
                 </div>
-                <div style="text-align:center;color:#8E8E93;margin-bottom:12px;font-size:13px">— or enter ticket token manually —</div>
+                <div style="text-align:center;color:#8E8E93;margin-bottom:12px;font-size:13px" data-i18n="scanner_or_manual">— or enter ticket token manually —</div>
                 <div style="display:flex;gap:8px;margin-bottom:16px">
-                    <input type="text" id="manual-ticket-token" placeholder="Paste ticket token here" style="flex:1;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:monospace;font-size:13px">
+                    <input type="text" id="manual-ticket-token" placeholder="Paste ticket token here" data-i18n-placeholder="ph_ticket_token" style="flex:1;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:monospace;font-size:13px">
                     <button onclick="verifyManualToken()" class="btn-primary" style="padding:12px 20px">
                         <i class="fas fa-check"></i>
                     </button>
@@ -341,11 +337,11 @@
                 <div style="display:flex;gap:12px;margin-top:16px">
                     <div style="flex:1;background:#E8F5E9;border-radius:12px;padding:16px;text-align:center">
                         <div style="font-size:24px;font-weight:700;color:#1A8A72" id="scan-valid-count">0</div>
-                        <div style="font-size:12px;color:#666">Verified</div>
+                        <div style="font-size:12px;color:#666" data-i18n="scanner_verified_label">Verified</div>
                     </div>
                     <div style="flex:1;background:#FFEBEE;border-radius:12px;padding:16px;text-align:center">
                         <div style="font-size:24px;font-weight:700;color:#FF3B30" id="scan-invalid-count">0</div>
-                        <div style="font-size:12px;color:#666">Invalid</div>
+                        <div style="font-size:12px;color:#666" data-i18n="scanner_invalid_label">Invalid</div>
                     </div>
                 </div>
             </div>
@@ -354,8 +350,8 @@
         <!-- Driver Profile Section -->
         <div id="driver-profile" class="section">
             <div class="section-header">
-                <h2>My Profile</h2>
-                <p>View and update your account details</p>
+                <h2 data-i18n="heading_my_profile">My Profile</h2>
+                <p data-i18n="sub_my_profile">View and update your account details</p>
             </div>
             <div class="profile-container">
                 <div class="profile-card">
@@ -364,29 +360,29 @@
                     </div>
                     <form id="driver-profile-form">
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="driver-profile-name" placeholder="Full Name" required>
+                            <label data-i18n="label_full_name">Full Name</label>
+                            <input type="text" id="driver-profile-name" placeholder="Full Name" data-i18n-placeholder="ph_full_name" required>
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="driver-profile-email" placeholder="Email" required>
+                            <label data-i18n="label_email">Email</label>
+                            <input type="email" id="driver-profile-email" placeholder="Email" data-i18n-placeholder="ph_email" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="driver-profile-phone" placeholder="Phone Number" required>
+                            <label data-i18n="label_phone">Phone Number</label>
+                            <input type="tel" id="driver-profile-phone" placeholder="Phone Number" data-i18n-placeholder="ph_phone" required>
                         </div>
                         <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
-                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
+                        <h4 style="color:#0D1B2A;margin-bottom:12px" data-i18n="label_change_password">Change Password</h4>
                         <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="driver-profile-current-password" placeholder="Enter current password">
+                            <label data-i18n="label_current_password">Current Password</label>
+                            <input type="password" id="driver-profile-current-password" placeholder="Enter current password" data-i18n-placeholder="ph_current_password">
                         </div>
                         <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="driver-profile-password" placeholder="Enter new password">
+                            <label data-i18n="label_new_password">New Password</label>
+                            <input type="password" id="driver-profile-password" placeholder="Enter new password" data-i18n-placeholder="ph_new_password">
                         </div>
                         <button type="submit" class="btn-primary" style="width:100%">
-                            <i class="fas fa-save"></i> Save Changes
+                            <i class="fas fa-save"></i> <span data-i18n="btn_save_changes">Save Changes</span>
                         </button>
                     </form>
                 </div>
@@ -400,43 +396,44 @@
         <nav class="navbar">
             <div class="nav-brand">
                 <i class="fas fa-bus"></i>
-                <span>Bus Point Admin</span>
+                <span data-i18n="app_name">Bus Point</span>
             </div>
             <div class="nav-menu">
                 <a href="#" onclick="showAdminSection('overview')" class="nav-item">
                     <i class="fas fa-tachometer-alt"></i>
-                    <span>Overview</span>
+                    <span data-i18n="nav_overview">Overview</span>
                 </a>
                 <a href="#" onclick="showAdminSection('trips')" class="nav-item active">
                     <i class="fas fa-route"></i>
-                    <span>Trips</span>
+                    <span data-i18n="nav_trips">Trips</span>
                 </a>
                 <a href="#" onclick="showAdminSection('buses')" class="nav-item">
                     <i class="fas fa-bus"></i>
-                    <span>Buses</span>
+                    <span data-i18n="nav_buses">Buses</span>
                 </a>
                 <a href="#" onclick="showAdminSection('routes')" class="nav-item">
                     <i class="fas fa-road"></i>
-                    <span>Routes</span>
+                    <span data-i18n="nav_routes">Routes</span>
                 </a>
                 <a href="#" onclick="showAdminSection('stops')" class="nav-item">
                     <i class="fas fa-map-pin"></i>
-                    <span>Stops</span>
+                    <span data-i18n="nav_stops">Stops</span>
                 </a>
                 <a href="#" onclick="showAdminSection('gps')" class="nav-item">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span>GPS</span>
+                    <span data-i18n="nav_gps">GPS</span>
                 </a>
                 <a href="#" onclick="showAdminSection('notifications')" class="nav-item">
                     <i class="fas fa-bell"></i>
-                    <span>Notify</span>
+                    <span data-i18n="nav_notify">Notify</span>
                 </a>
             </div>
             <div class="nav-user">
                 <div class="user-info" onclick="showAdminSection('profile')" style="cursor:pointer" title="View Profile">
                     <span id="adminName">Admin</span>
-                    <small>Admin</small>
+                    <small data-i18n="nav_admin">Admin</small>
                 </div>
+                <button onclick="toggleLang()" class="btn-logout lang-btn" id="lang-btn-admin" style="font-size:11px;font-weight:700;letter-spacing:.5px;min-width:32px" title="Switch Language / Hindura Ururimi">RW</button>
                 <button onclick="logout()" class="btn-logout">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
@@ -445,8 +442,8 @@
         <!-- Admin Overview Section -->
         <div id="admin-overview" class="section">
             <div class="section-header">
-                <h2>Overview</h2>
-                <p>Your company at a glance</p>
+                <h2 data-i18n="heading_overview">Overview</h2>
+                <p data-i18n="sub_overview">Your company at a glance</p>
             </div>
             <div id="overview-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:0 16px 16px">
                 <!-- populated by JS -->
@@ -456,10 +453,10 @@
         <!-- Admin Trips Section -->
         <div id="admin-trips" class="section active">
             <div class="section-header">
-                <h2>Today's Trips</h2>
-                <p>Manage your assigned trips</p>
+                <h2 data-i18n="heading_admin_trips">Today's Trips</h2>
+                <p data-i18n="sub_admin_trips">Manage your assigned trips</p>
                 <button onclick="openTripModal()" class="btn-primary" style="margin-top:12px">
-                    <i class="fas fa-plus"></i> Add Trip
+                    <i class="fas fa-plus"></i> <span data-i18n="btn_add_trip">Add Trip</span>
                 </button>
             </div>
             <div id="trips-list" class="trips-list">
@@ -470,10 +467,10 @@
         <!-- Admin Buses Section -->
         <div id="admin-buses" class="section">
             <div class="section-header">
-                <h2>My Buses</h2>
-                <p>Buses assigned to you</p>
+                <h2 data-i18n="heading_admin_buses">My Buses</h2>
+                <p data-i18n="sub_admin_buses">Buses assigned to your company</p>
                 <button onclick="openBusModal()" class="btn-primary" style="margin-top:12px">
-                    <i class="fas fa-plus"></i> Add Bus
+                    <i class="fas fa-plus"></i> <span data-i18n="btn_add_bus">Add Bus</span>
                 </button>
             </div>
             <div id="buses-list" class="trips-list">
@@ -484,10 +481,10 @@
         <!-- Admin Routes Section -->
         <div id="admin-routes" class="section">
             <div class="section-header">
-                <h2>Routes</h2>
-                <p>Manage bus routes and their stops</p>
+                <h2 data-i18n="heading_admin_routes">Routes</h2>
+                <p data-i18n="sub_admin_routes">Manage bus routes and their stops</p>
                 <button onclick="openRouteModal()" class="btn-primary" style="margin-top:12px">
-                    <i class="fas fa-plus"></i> Add Route
+                    <i class="fas fa-plus"></i> <span data-i18n="btn_add_route">Add Route</span>
                 </button>
             </div>
             <div id="routes-list" class="trips-list"></div>
@@ -511,10 +508,10 @@
         <!-- Admin Stops Section -->
         <div id="admin-stops" class="section">
             <div class="section-header">
-                <h2>Stops</h2>
-                <p>Manage all bus stops</p>
+                <h2 data-i18n="heading_admin_stops">Stops</h2>
+                <p data-i18n="sub_admin_stops">Manage all bus stops</p>
                 <button onclick="openStopModal()" class="btn-primary" style="margin-top:12px">
-                    <i class="fas fa-plus"></i> Add Stop
+                    <i class="fas fa-plus"></i> <span data-i18n="btn_add_stop">Add Stop</span>
                 </button>
             </div>
             <div id="stops-list" class="trips-list"></div>
@@ -523,8 +520,8 @@
         <!-- Admin GPS Section -->
         <div id="admin-gps" class="section">
             <div class="section-header">
-                <h2>GPS Tracking</h2>
-                <p>Broadcast your location and see all buses on the map</p>
+                <h2 data-i18n="heading_gps">GPS Tracking</h2>
+                <p data-i18n="sub_gps">Broadcast your location and see all buses on the map</p>
             </div>
 
             <!-- Active trip selector -->
@@ -580,11 +577,11 @@
                 <div class="gps-controls">
                     <button onclick="startGPSTracking()" class="btn-primary">
                         <i class="fas fa-play"></i>
-                        Start Tracking
+                        <span data-i18n="btn_start_tracking">Start Tracking</span>
                     </button>
                     <button onclick="stopGPSTracking()" class="btn-secondary">
                         <i class="fas fa-stop"></i>
-                        Stop Tracking
+                        <span data-i18n="btn_stop_tracking">Stop Tracking</span>
                     </button>
                 </div>
             </div>
@@ -593,22 +590,22 @@
         <!-- Admin Notifications Section -->
         <div id="admin-notifications" class="section">
             <div class="section-header">
-                <h2>Broadcast Notification</h2>
-                <p>Send a notification to all passengers</p>
+                <h2 data-i18n="heading_broadcast">Broadcast Notification</h2>
+                <p data-i18n="sub_broadcast">Send a notification to all passengers</p>
             </div>
             <div class="profile-container">
                 <div class="profile-card">
                     <form id="broadcast-notification-form">
                         <div class="form-group">
-                            <label>Title</label>
-                            <input type="text" id="broadcast-title" placeholder="Notification title" required>
+                            <label data-i18n="label_notif_title">Title</label>
+                            <input type="text" id="broadcast-title" placeholder="Notification title" data-i18n-placeholder="ph_notif_title" required>
                         </div>
                         <div class="form-group">
-                            <label>Message</label>
-                            <textarea id="broadcast-message" placeholder="Write your message to all passengers..." rows="4" required style="width:100%;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
+                            <label data-i18n="label_notif_message">Message</label>
+                            <textarea id="broadcast-message" placeholder="Write your message to all passengers..." data-i18n-placeholder="ph_notif_message" rows="4" required style="width:100%;padding:12px;border:2px solid #F5F5F5;border-radius:12px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
                         </div>
                         <button type="submit" class="btn-primary" style="width:100%">
-                            <i class="fas fa-paper-plane"></i> Send to All Passengers
+                            <i class="fas fa-paper-plane"></i> <span data-i18n="btn_send_all">Send to All Passengers</span>
                         </button>
                     </form>
                 </div>
@@ -618,8 +615,8 @@
         <!-- Admin Profile Section -->
         <div id="admin-profile" class="section">
             <div class="section-header">
-                <h2>My Profile</h2>
-                <p>View and update your account details</p>
+                <h2 data-i18n="heading_my_profile">My Profile</h2>
+                <p data-i18n="sub_my_profile">View and update your account details</p>
             </div>
             <div class="profile-container">
                 <div class="profile-card">
@@ -628,29 +625,29 @@
                     </div>
                     <form id="admin-profile-form">
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="admin-profile-name" placeholder="Full Name" required>
+                            <label data-i18n="label_full_name">Full Name</label>
+                            <input type="text" id="admin-profile-name" placeholder="Full Name" data-i18n-placeholder="ph_full_name" required>
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="admin-profile-email" placeholder="Email" required>
+                            <label data-i18n="label_email">Email</label>
+                            <input type="email" id="admin-profile-email" placeholder="Email" data-i18n-placeholder="ph_email" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="admin-profile-phone" placeholder="Phone Number" required>
+                            <label data-i18n="label_phone">Phone Number</label>
+                            <input type="tel" id="admin-profile-phone" placeholder="Phone Number" data-i18n-placeholder="ph_phone" required>
                         </div>
                         <hr style="border:none;border-top:1px solid #F5F5F5;margin:20px 0">
-                        <h4 style="color:#0D1B2A;margin-bottom:12px">Change Password</h4>
+                        <h4 style="color:#0D1B2A;margin-bottom:12px" data-i18n="label_change_password">Change Password</h4>
                         <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="admin-profile-current-password" placeholder="Enter current password">
+                            <label data-i18n="label_current_password">Current Password</label>
+                            <input type="password" id="admin-profile-current-password" placeholder="Enter current password" data-i18n-placeholder="ph_current_password">
                         </div>
                         <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="admin-profile-password" placeholder="Enter new password">
+                            <label data-i18n="label_new_password">New Password</label>
+                            <input type="password" id="admin-profile-password" placeholder="Enter new password" data-i18n-placeholder="ph_new_password">
                         </div>
                         <button type="submit" class="btn-primary" style="width:100%">
-                            <i class="fas fa-save"></i> Save Changes
+                            <i class="fas fa-save"></i> <span data-i18n="btn_save_changes">Save Changes</span>
                         </button>
                     </form>
                 </div>
@@ -662,7 +659,7 @@
     <div id="admin-trip-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="admin-trip-modal-title">Add Trip</h3>
+                <h3 id="admin-trip-modal-title" data-i18n="btn_add_trip">Add Trip</h3>
                 <button onclick="closeTripModal()" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
@@ -670,42 +667,42 @@
             <div class="modal-body">
                 <form id="admin-trip-form">
                     <div class="form-group">
-                        <label>Bus <span style="color:#FF3B30">*</span></label>
+                        <label data-i18n="label_bus">Bus</label> <span style="color:#FF3B30">*</span>
                         <select id="trip-form-bus" required>
                             <option value="">Select bus</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Route <span style="color:#FF3B30">*</span></label>
+                        <label data-i18n="label_route">Route</label> <span style="color:#FF3B30">*</span>
                         <select id="trip-form-route" required>
                             <option value="">Select route</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Departure Time <span style="color:#FF3B30">*</span></label>
+                        <label data-i18n="label_departure_time">Departure Time</label> <span style="color:#FF3B30">*</span>
                         <input type="datetime-local" id="trip-form-departure" required>
                     </div>
                     <div class="form-group">
-                        <label>Arrival Time <small>(optional)</small></label>
+                        <label data-i18n="label_arrival_time">Arrival Time</label> <small>(optional)</small>
                         <input type="datetime-local" id="trip-form-arrival">
                     </div>
                     <div class="form-group">
-                        <label>Available Seats <span style="color:#FF3B30">*</span></label>
-                        <input type="number" id="trip-form-capacity" min="1" placeholder="e.g. 30" required>
+                        <label data-i18n="label_available_seats">Available Seats</label> <span style="color:#FF3B30">*</span>
+                        <input type="number" id="trip-form-capacity" min="1" placeholder="e.g. 30" data-i18n-placeholder="ph_capacity" required>
                     </div>
                     <div class="form-group">
-                        <label>Assign Driver <small>(optional — defaults to you)</small></label>
+                        <label data-i18n="label_assign_driver">Assign Driver</label> <small>(optional)</small>
                         <select id="trip-form-driver">
                             <option value="">Assign to self</option>
                         </select>
                     </div>
                     <div id="trip-form-status-group" class="form-group" style="display:none">
-                        <label>Status</label>
+                        <label data-i18n="label_status">Status</label>
                         <select id="trip-form-status">
                         </select>
                     </div>
                     <button type="submit" id="trip-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
-                        <i class="fas fa-save"></i> Save Trip
+                        <i class="fas fa-save"></i> <span data-i18n="btn_save_trip">Save Trip</span>
                     </button>
                 </form>
             </div>
@@ -716,7 +713,7 @@
     <div id="admin-bus-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="admin-bus-modal-title">Add Bus</h3>
+                <h3 id="admin-bus-modal-title" data-i18n="btn_add_bus">Add Bus</h3>
                 <button onclick="closeBusModal()" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
@@ -724,30 +721,30 @@
             <div class="modal-body">
                 <form id="admin-bus-form">
                     <div class="form-group">
-                        <label>Plate Number <span style="color:#FF3B30">*</span></label>
-                        <input type="text" id="bus-form-plate" placeholder="e.g. RAB 123A" required>
+                        <label data-i18n="label_plate_number">Plate Number</label> <span style="color:#FF3B30">*</span>
+                        <input type="text" id="bus-form-plate" placeholder="e.g. RAB 123A" data-i18n-placeholder="ph_plate" required>
                     </div>
                     <div class="form-group">
-                        <label>Bus Type</label>
-                        <input type="text" id="bus-form-type" placeholder="e.g. Coaster, Mini-bus">
+                        <label data-i18n="label_bus_type">Bus Type</label>
+                        <input type="text" id="bus-form-type" placeholder="e.g. Coaster, Mini-bus" data-i18n-placeholder="ph_bus_type">
                     </div>
                     <div class="form-group">
-                        <label>Capacity <span style="color:#FF3B30">*</span></label>
-                        <input type="number" id="bus-form-capacity" min="1" placeholder="e.g. 30" required>
+                        <label data-i18n="label_capacity">Capacity</label> <span style="color:#FF3B30">*</span>
+                        <input type="number" id="bus-form-capacity" min="1" placeholder="e.g. 30" data-i18n-placeholder="ph_capacity" required>
                     </div>
                     <div class="form-group">
-                        <label>Make / Model</label>
-                        <input type="text" id="bus-form-make-model" placeholder="e.g. Toyota Coaster">
+                        <label data-i18n="label_make_model">Make / Model</label>
+                        <input type="text" id="bus-form-make-model" placeholder="e.g. Toyota Coaster" data-i18n-placeholder="ph_make_model">
                     </div>
                     <div class="form-group">
-                        <label>Status</label>
+                        <label data-i18n="label_status">Status</label>
                         <select id="bus-form-status">
                             <option value="true">Active</option>
                             <option value="false">Inactive</option>
                         </select>
                     </div>
                     <button type="submit" id="bus-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
-                        <i class="fas fa-save"></i> Save Bus
+                        <i class="fas fa-save"></i> <span data-i18n="btn_save_bus">Save Bus</span>
                     </button>
                 </form>
             </div>
@@ -758,28 +755,28 @@
     <div id="admin-route-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="admin-route-modal-title">Add Route</h3>
+                <h3 id="admin-route-modal-title" data-i18n="btn_add_route">Add Route</h3>
                 <button onclick="closeRouteModal()" class="modal-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <form id="admin-route-form">
                     <div class="form-group">
-                        <label>Route Code <span style="color:#FF3B30">*</span></label>
-                        <input type="text" id="route-form-code" placeholder="e.g. KGL-001" required>
+                        <label data-i18n="label_route_code">Route Code</label> <span style="color:#FF3B30">*</span>
+                        <input type="text" id="route-form-code" placeholder="e.g. KGL-001" data-i18n-placeholder="ph_route_code" required>
                     </div>
                     <div class="form-group">
-                        <label>Route Name <span style="color:#FF3B30">*</span></label>
-                        <input type="text" id="route-form-name" placeholder="e.g. Kigali City — Nyabugogo" required>
+                        <label data-i18n="label_route_name">Route Name</label> <span style="color:#FF3B30">*</span>
+                        <input type="text" id="route-form-name" placeholder="e.g. Kigali City — Nyabugogo" data-i18n-placeholder="ph_route_name" required>
                     </div>
                     <div class="form-group">
-                        <label>Status</label>
+                        <label data-i18n="label_status">Status</label>
                         <select id="route-form-status">
                             <option value="true">Active</option>
                             <option value="false">Inactive</option>
                         </select>
                     </div>
                     <button type="submit" id="route-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
-                        <i class="fas fa-save"></i> Save Route
+                        <i class="fas fa-save"></i> <span data-i18n="btn_save_route">Save Route</span>
                     </button>
                 </form>
             </div>
@@ -790,32 +787,32 @@
     <div id="admin-stop-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="admin-stop-modal-title">Add Stop</h3>
+                <h3 id="admin-stop-modal-title" data-i18n="btn_add_stop">Add Stop</h3>
                 <button onclick="closeStopModal()" class="modal-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <form id="admin-stop-form">
                     <div class="form-group">
-                        <label>Stop Name <span style="color:#FF3B30">*</span></label>
-                        <input type="text" id="stop-form-name" placeholder="e.g. Nyabugogo Terminal" required>
+                        <label data-i18n="label_stop_name">Stop Name</label> <span style="color:#FF3B30">*</span>
+                        <input type="text" id="stop-form-name" placeholder="e.g. Nyabugogo Terminal" data-i18n-placeholder="ph_stop_name" required>
                     </div>
                     <div class="form-group">
-                        <label>Latitude <span style="color:#FF3B30">*</span></label>
-                        <input type="number" id="stop-form-lat" step="any" placeholder="e.g. -1.9441" required>
+                        <label data-i18n="label_latitude">Latitude</label> <span style="color:#FF3B30">*</span>
+                        <input type="number" id="stop-form-lat" step="any" placeholder="e.g. -1.9441" data-i18n-placeholder="ph_latitude" required>
                     </div>
                     <div class="form-group">
-                        <label>Longitude <span style="color:#FF3B30">*</span></label>
-                        <input type="number" id="stop-form-lng" step="any" placeholder="e.g. 30.0619" required>
+                        <label data-i18n="label_longitude">Longitude</label> <span style="color:#FF3B30">*</span>
+                        <input type="number" id="stop-form-lng" step="any" placeholder="e.g. 30.0619" data-i18n-placeholder="ph_longitude" required>
                     </div>
                     <div class="form-group">
-                        <label>Status</label>
+                        <label data-i18n="label_status">Status</label>
                         <select id="stop-form-status">
                             <option value="true">Active</option>
                             <option value="false">Inactive</option>
                         </select>
                     </div>
                     <button type="submit" id="stop-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
-                        <i class="fas fa-save"></i> Save Stop
+                        <i class="fas fa-save"></i> <span data-i18n="btn_save_stop">Save Stop</span>
                     </button>
                 </form>
             </div>
@@ -826,27 +823,27 @@
     <div id="admin-route-stop-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="admin-route-stop-modal-title">Add Stop to Route</h3>
+                <h3 id="admin-route-stop-modal-title" data-i18n="btn_add_stop">Add Stop to Route</h3>
                 <button onclick="closeRouteStopModal()" class="modal-close"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <form id="admin-route-stop-form">
                     <div class="form-group">
-                        <label>Stop <span style="color:#FF3B30">*</span></label>
+                        <label data-i18n="label_stop_name">Stop</label> <span style="color:#FF3B30">*</span>
                         <select id="route-stop-form-stop" required>
                             <option value="">Select stop</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Stop Order <span style="color:#FF3B30">*</span></label>
-                        <input type="number" id="route-stop-form-order" min="1" placeholder="e.g. 1" required>
+                        <label data-i18n="label_stop_order">Stop Order</label> <span style="color:#FF3B30">*</span>
+                        <input type="number" id="route-stop-form-order" min="1" placeholder="e.g. 1" data-i18n-placeholder="ph_stop_order" required>
                     </div>
                     <div class="form-group">
-                        <label>Minutes from Start <small>(optional)</small></label>
-                        <input type="number" id="route-stop-form-minutes" min="0" placeholder="e.g. 0">
+                        <label data-i18n="label_minutes_from_start">Minutes from Start</label> <small>(optional)</small>
+                        <input type="number" id="route-stop-form-minutes" min="0" placeholder="e.g. 0" data-i18n-placeholder="ph_minutes">
                     </div>
                     <button type="submit" id="route-stop-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
-                        <i class="fas fa-save"></i> Save
+                        <i class="fas fa-save"></i> <span data-i18n="notif_saved">Save</span>
                     </button>
                 </form>
             </div>
@@ -946,6 +943,7 @@
     </div>
 
     <script src="js/config.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
     <script src="js/connection-status.js"></script>
     <script src="js/auth.js"></script>

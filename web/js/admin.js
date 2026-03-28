@@ -59,7 +59,7 @@ function showAdminSection(section) {
 
 function loadTodayTrips() {
     const container = document.getElementById('trips-list');
-    container.innerHTML = '<div class="text-center">Loading trips…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading_trips')}</div>`;
 
     api.getTrips({ company: currentUser.company })
         .then(trips => {
@@ -75,7 +75,7 @@ function renderTripsList(trips) {
     const container = document.getElementById('trips-list');
 
     if (!trips.length) {
-        container.innerHTML = '<div class="text-center">No trips assigned to you yet.</div>';
+        container.innerHTML = `<div class="text-center">${t('dyn_no_trips')}</div>`;
         return;
     }
 
@@ -127,13 +127,13 @@ function formatDateTime(iso) {
 
 function loadAdminBuses() {
     const container = document.getElementById('buses-list');
-    container.innerHTML = '<div class="text-center">Loading buses…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading_buses')}</div>`;
 
     api.getBuses({ is_active: 'true' })
         .then(buses => {
             const myBuses = buses.filter(b => b.company && b.company === currentUser.company);
             if (!myBuses.length) {
-                container.innerHTML = '<div class="text-center">No buses assigned to you yet.</div>';
+                container.innerHTML = `<div class="text-center">${t('dyn_no_buses')}</div>`;
                 return;
             }
             container.innerHTML = myBuses.map(bus => `
@@ -212,7 +212,7 @@ function saveBusForm(event) {
     const isActive = document.getElementById('bus-form-status').value === 'true';
 
     if (!plate || !capacity) {
-        showNotification('Plate number and capacity are required.', 'error');
+        showNotification(t('notif_fill_all_fields'), 'error');
         return;
     }
 
@@ -227,7 +227,7 @@ function saveBusForm(event) {
 
     const saveBtn = document.getElementById('bus-form-save-btn');
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     const action = currentEditBusId
         ? api.updateBus(currentEditBusId, data)
@@ -235,7 +235,7 @@ function saveBusForm(event) {
 
     action
         .then(() => {
-            showNotification(currentEditBusId ? 'Bus updated.' : 'Bus added.', 'success');
+            showNotification(currentEditBusId ? t('notif_bus_updated') : t('notif_bus_added'), 'success');
             closeBusModal();
             adminBusList = [];   // clear cache so next load is fresh
             loadAdminBuses();
@@ -245,19 +245,19 @@ function saveBusForm(event) {
         })
         .finally(() => {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Bus';
+            saveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_bus')}`;
         });
 }
 
 function confirmDeleteBus(busId) {
-    if (!confirm('Delete this bus? This cannot be undone.')) return;
+    if (!confirm(t('confirm_delete_bus'))) return;
 
     const btn = document.querySelector(`button[onclick="confirmDeleteBus('${busId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
     api.deleteBus(busId)
         .then(() => {
-            showNotification('Bus deleted.', 'success');
+            showNotification(t('notif_bus_deleted'), 'success');
             adminBusList = [];
             loadAdminBuses();
         })
@@ -383,7 +383,7 @@ function saveTripForm(event) {
     const capacity = parseInt(document.getElementById('trip-form-capacity').value);
 
     if (!busId || !routeId || !departure || !capacity) {
-        showNotification('Please fill in all required fields.', 'error');
+        showNotification(t('notif_fill_all_fields'), 'error');
         return;
     }
 
@@ -405,7 +405,7 @@ function saveTripForm(event) {
 
     const saveBtn = document.getElementById('trip-form-save-btn');
     saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     const action = currentEditTripId
         ? api.updateTrip(currentEditTripId, data)
@@ -413,7 +413,7 @@ function saveTripForm(event) {
 
     action
         .then(() => {
-            showNotification(currentEditTripId ? 'Trip updated.' : 'Trip created.', 'success');
+            showNotification(currentEditTripId ? t('notif_trip_updated') : t('notif_trip_created'), 'success');
             closeTripModal();
             loadTodayTrips();
         })
@@ -422,19 +422,19 @@ function saveTripForm(event) {
         })
         .finally(() => {
             saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Trip';
+            saveBtn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_trip')}`;
         });
 }
 
 function confirmDeleteTrip(tripId) {
-    if (!confirm('Delete this trip? This cannot be undone.')) return;
+    if (!confirm(t('confirm_delete_trip'))) return;
 
     const btn = document.querySelector(`button[onclick="confirmDeleteTrip('${tripId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
     api.deleteTrip(tripId)
         .then(() => {
-            showNotification('Trip deleted.', 'success');
+            showNotification(t('notif_trip_deleted'), 'success');
             loadTodayTrips();
         })
         .catch(err => {
@@ -663,7 +663,7 @@ function startGPSTracking() {
 
     const tripId = document.getElementById('gps-trip-select').value;
     if (!tripId) {
-        showNotification('Select a trip before starting tracking.', 'error');
+        showNotification(t('dyn_no_trip_selected'), 'error');
         return;
     }
 
@@ -813,12 +813,12 @@ function loadAdminOverview() {
         const onRoute   = locations.length;
 
         const cards = [
-            { icon: 'fa-play-circle',      color: '#1A8A72', label: 'Active Trips',       value: active },
-            { icon: 'fa-clock',            color: '#4A90D9', label: 'Scheduled',           value: scheduled },
-            { icon: 'fa-check-circle',     color: '#34C759', label: 'Completed Today',     value: completedToday },
-            { icon: 'fa-times-circle',     color: '#FF3B30', label: 'Cancelled',           value: cancelled },
-            { icon: 'fa-bus',              color: '#FF9500', label: 'Total Buses',         value: myBuses.length },
-            { icon: 'fa-map-marker-alt',   color: '#AF52DE', label: 'Buses on Route',      value: onRoute },
+            { icon: 'fa-play-circle',      color: '#1A8A72', label: t('stat_active_trips'),    value: active },
+            { icon: 'fa-clock',            color: '#4A90D9', label: t('stat_scheduled'),        value: scheduled },
+            { icon: 'fa-check-circle',     color: '#34C759', label: t('stat_completed_today'),  value: completedToday },
+            { icon: 'fa-times-circle',     color: '#FF3B30', label: t('stat_cancelled'),        value: cancelled },
+            { icon: 'fa-bus',              color: '#FF9500', label: t('stat_total_buses'),       value: myBuses.length },
+            { icon: 'fa-map-marker-alt',   color: '#AF52DE', label: t('stat_buses_on_route'),   value: onRoute },
         ];
 
         container.innerHTML = cards.map(c => `
@@ -845,7 +845,7 @@ let activeRouteForStops   = null;  // route object whose stops are open in the p
 
 function loadAdminRoutes() {
     const container = document.getElementById('routes-list');
-    container.innerHTML = '<div class="text-center">Loading routes…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading_routes')}</div>`;
 
     api.getRoutes()
         .then(routes => {
@@ -860,7 +860,7 @@ function loadAdminRoutes() {
 function renderAdminRoutes(routes) {
     const container = document.getElementById('routes-list');
     if (!routes.length) {
-        container.innerHTML = '<div class="text-center">No routes yet.</div>';
+        container.innerHTML = `<div class="text-center">${t('dyn_no_routes')}</div>`;
         return;
     }
     container.innerHTML = routes.map(r => `
@@ -913,34 +913,34 @@ function saveRouteForm(event) {
     const name     = document.getElementById('route-form-name').value.trim();
     const isActive = document.getElementById('route-form-status').value === 'true';
 
-    if (!code || !name) { showNotification('Code and name are required.', 'error'); return; }
+    if (!code || !name) { showNotification(t('notif_fill_all_fields'), 'error'); return; }
 
     const data = { route_code: code, name, is_active: isActive };
     const btn  = document.getElementById('route-form-save-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     const action = currentEditRouteId
         ? api.updateRoute(currentEditRouteId, data)
         : api.createRoute(data);
 
     action.then(() => {
-        showNotification(currentEditRouteId ? 'Route updated.' : 'Route created.', 'success');
+        showNotification(currentEditRouteId ? t('notif_route_updated') : t('notif_route_created'), 'success');
         closeRouteModal();
         adminAllRoutes = [];
         loadAdminRoutes();
     }).catch(err => {
         showNotification('Error: ' + err.message, 'error');
     }).finally(() => {
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Route';
+        btn.disabled = false; btn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_route')}`;
     });
 }
 
 function confirmDeleteRoute(routeId) {
-    if (!confirm('Delete this route? This cannot be undone.')) return;
+    if (!confirm(t('confirm_delete_route'))) return;
     const btn = document.querySelector(`button[onclick="confirmDeleteRoute('${routeId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
     api.deleteRoute(routeId)
-        .then(() => { showNotification('Route deleted.', 'success'); adminAllRoutes = []; loadAdminRoutes(); })
+        .then(() => { showNotification(t('notif_route_deleted'), 'success'); adminAllRoutes = []; loadAdminRoutes(); })
         .catch(err => {
             showNotification('Error: ' + err.message, 'error');
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
@@ -967,7 +967,7 @@ function closeRouteStopsPanel() {
 
 function loadRouteStopsForRoute(routeId) {
     const container = document.getElementById('route-stops-list');
-    container.innerHTML = '<div class="text-center">Loading…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading')}</div>`;
 
     Promise.all([
         api.getRouteStops({ route_id: routeId }),
@@ -975,7 +975,7 @@ function loadRouteStopsForRoute(routeId) {
     ]).then(([routeStops, stops]) => {
         adminAllStops = stops;
         if (!routeStops.length) {
-            container.innerHTML = '<div class="text-center" style="color:#888;padding:12px">No stops on this route yet. Add one above.</div>';
+            container.innerHTML = `<div class="text-center" style="color:#888;padding:12px">${t('dyn_no_route_stops')}</div>`;
             return;
         }
         const stopMap = Object.fromEntries(stops.map(s => [s.id, s]));
@@ -1042,7 +1042,7 @@ function saveRouteStopForm(event) {
     const order   = parseInt(document.getElementById('route-stop-form-order').value);
     const minutes = document.getElementById('route-stop-form-minutes').value;
 
-    if (!stopId || !order) { showNotification('Stop and order are required.', 'error'); return; }
+    if (!stopId || !order) { showNotification(t('notif_fill_all_fields'), 'error'); return; }
 
     const data = {
         route_id: activeRouteForStops.id,
@@ -1052,30 +1052,30 @@ function saveRouteStopForm(event) {
     };
 
     const btn = document.getElementById('route-stop-form-save-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     const action = currentEditRouteStopId
         ? api.updateRouteStop(currentEditRouteStopId, data)
         : api.createRouteStop(data);
 
     action.then(() => {
-        showNotification('Saved.', 'success');
+        showNotification(t('notif_saved'), 'success');
         closeRouteStopModal();
         loadRouteStopsForRoute(activeRouteForStops.id);
     }).catch(err => {
         showNotification('Error: ' + err.message, 'error');
     }).finally(() => {
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save';
+        btn.disabled = false; btn.innerHTML = `<i class="fas fa-save"></i> ${t('notif_saved')}`;
     });
 }
 
 function confirmDeleteRouteStop(routeStopId) {
-    if (!confirm('Remove this stop from the route?')) return;
+    if (!confirm(t('confirm_remove_route_stop'))) return;
     const btn = document.querySelector(`button[onclick="confirmDeleteRouteStop('${routeStopId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
     api.deleteRouteStop(routeStopId)
         .then(() => {
-            showNotification('Stop removed from route.', 'success');
+            showNotification(t('notif_stop_deleted'), 'success');
             if (activeRouteForStops) loadRouteStopsForRoute(activeRouteForStops.id);
         })
         .catch(err => {
@@ -1088,7 +1088,7 @@ function confirmDeleteRouteStop(routeStopId) {
 
 function loadAdminStops() {
     const container = document.getElementById('stops-list');
-    container.innerHTML = '<div class="text-center">Loading stops…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading_stops')}</div>`;
 
     api.getStops()
         .then(stops => {
@@ -1103,7 +1103,7 @@ function loadAdminStops() {
 function renderAdminStops(stops) {
     const container = document.getElementById('stops-list');
     if (!stops.length) {
-        container.innerHTML = '<div class="text-center">No stops yet.</div>';
+        container.innerHTML = `<div class="text-center">${t('dyn_no_stops')}</div>`;
         return;
     }
     container.innerHTML = stops.map(s => `
@@ -1155,34 +1155,34 @@ function saveStopForm(event) {
     const lng      = parseFloat(document.getElementById('stop-form-lng').value);
     const isActive = document.getElementById('stop-form-status').value === 'true';
 
-    if (!name || isNaN(lat) || isNaN(lng)) { showNotification('Name, latitude, and longitude are required.', 'error'); return; }
+    if (!name || isNaN(lat) || isNaN(lng)) { showNotification(t('notif_fill_all_fields'), 'error'); return; }
 
     const data = { name, latitude: lat, longitude: lng, is_active: isActive };
     const btn  = document.getElementById('stop-form-save-btn');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     const action = currentEditStopId
         ? api.updateStop(currentEditStopId, data)
         : api.createStop(data);
 
     action.then(() => {
-        showNotification(currentEditStopId ? 'Stop updated.' : 'Stop created.', 'success');
+        showNotification(currentEditStopId ? t('notif_stop_updated') : t('notif_stop_created'), 'success');
         closeStopModal();
         adminAllStops = [];
         loadAdminStops();
     }).catch(err => {
         showNotification('Error: ' + err.message, 'error');
     }).finally(() => {
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Stop';
+        btn.disabled = false; btn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_stop')}`;
     });
 }
 
 function confirmDeleteStop(stopId) {
-    if (!confirm('Delete this stop? This cannot be undone.')) return;
+    if (!confirm(t('confirm_delete_stop'))) return;
     const btn = document.querySelector(`button[onclick="confirmDeleteStop('${stopId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
     api.deleteStop(stopId)
-        .then(() => { showNotification('Stop deleted.', 'success'); adminAllStops = []; loadAdminStops(); })
+        .then(() => { showNotification(t('notif_stop_deleted'), 'success'); adminAllStops = []; loadAdminStops(); })
         .catch(err => {
             showNotification('Error: ' + err.message, 'error');
             if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
@@ -1255,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
             if (password) {
                 if (!currentPwd) {
-                    showNotification('Please enter your current password to change it.', 'error');
+                    showNotification(t('notif_current_pwd_required'), 'error');
                     return;
                 }
                 data.current_password = currentPwd;
@@ -1263,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (Object.keys(data).length === 0) {
-                showNotification('No changes to save.', 'info');
+                showNotification(t('notif_no_changes'), 'info');
                 return;
             }
 
@@ -1274,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('adminName').textContent = currentUser.full_name;
                 document.getElementById('admin-profile-current-password').value = '';
                 document.getElementById('admin-profile-password').value = '';
-                showNotification('Profile updated successfully!', 'success');
+                showNotification(t('notif_profile_updated'), 'success');
             } catch (err) {
                 showNotification(err.message || 'Failed to update profile.', 'error');
             }

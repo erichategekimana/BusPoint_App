@@ -40,7 +40,7 @@ function setupAuthForms() {
         const password = document.getElementById('loginPassword').value;
         
         if (!email || !password) {
-            showNotification('Please fill in all fields', 'error');
+            showNotification(t('notif_fill_all_fields'), 'error');
             return;
         }
         
@@ -50,7 +50,7 @@ function setupAuthForms() {
         
         btn.disabled = true;
         spinner.style.display = 'inline-block';
-        btnText.textContent = 'Signing in...';
+        btnText.textContent = t('dyn_signing_in');
         
         try {
             console.log('Attempting login with:', { email });
@@ -79,7 +79,7 @@ function setupAuthForms() {
             }
 
             // Show success message
-            showNotification('Login successful!', 'success');
+            showNotification(t('notif_login_success'), 'success');
             
         } catch (error) {
             console.error('Login error:', error);
@@ -87,7 +87,7 @@ function setupAuthForms() {
         } finally {
             btn.disabled = false;
             spinner.style.display = 'none';
-            btnText.textContent = 'Sign In';
+            btnText.textContent = t('sign_in');
         }
     });
 
@@ -103,17 +103,17 @@ function setupAuthForms() {
         
         // Validation
         if (!fullName || !phoneNumber || !email || !password || !role) {
-            showNotification('Please fill in all fields', 'error');
+            showNotification(t('notif_fill_all_fields'), 'error');
             return;
         }
-        
+
         if (password.length < 6) {
-            showNotification('Password must be at least 6 characters', 'error');
+            showNotification(t('notif_pwd_too_short'), 'error');
             return;
         }
-        
+
         if (!email.includes('@')) {
-            showNotification('Please enter a valid email address', 'error');
+            showNotification(t('notif_invalid_email'), 'error');
             return;
         }
         
@@ -135,7 +135,7 @@ function setupAuthForms() {
         
         btn.disabled = true;
         spinner.style.display = 'inline-block';
-        btnText.textContent = 'Creating account...';
+        btnText.textContent = t('dyn_creating');
         
         try {
             console.log('Attempting registration with:', { ...userData, password: '[HIDDEN]' });
@@ -163,7 +163,7 @@ function setupAuthForms() {
                 showAdminDashboard();
             }
 
-            showNotification('Registration successful! Welcome to Bus Point!', 'success');
+            showNotification(t('notif_register_success'), 'success');
             
         } catch (error) {
             console.error('Registration error:', error);
@@ -171,7 +171,7 @@ function setupAuthForms() {
         } finally {
             btn.disabled = false;
             spinner.style.display = 'none';
-            btnText.textContent = 'Create Account';
+            btnText.textContent = t('create_account');
         }
     });
 }
@@ -204,7 +204,7 @@ function logout() {
     // Show auth section
     document.getElementById('auth-section').classList.remove('hidden');
 
-    showNotification('Logged out successfully', 'success');
+    showNotification(t('notif_logout_success'), 'success');
 }
 
 function showLogin() {

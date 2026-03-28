@@ -44,7 +44,7 @@ function showDriverSection(section) {
 
 function loadDriverTrips() {
     const container = document.getElementById('driver-trips-list');
-    container.innerHTML = '<div class="text-center">Loading trips…</div>';
+    container.innerHTML = `<div class="text-center">${t('dyn_loading_trips')}</div>`;
 
     api.getTrips({ assigned_to: currentUser.id })
         .then(trips => {
@@ -60,7 +60,7 @@ function renderDriverTripsList(trips) {
     const container = document.getElementById('driver-trips-list');
 
     if (!trips.length) {
-        container.innerHTML = '<div class="text-center">No trips assigned to you yet.</div>';
+        container.innerHTML = `<div class="text-center">${t('dyn_no_trips')}</div>`;
         return;
     }
 
@@ -110,14 +110,14 @@ function formatDriverDateTime(iso) {
 }
 
 function startTrip(tripId) {
-    if (!confirm('Start this trip? Status will change to In Progress.')) return;
+    if (!confirm(t('confirm_start_trip'))) return;
 
     const btn = document.getElementById(`btn-start-${tripId}`);
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting…'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_starting')}`; }
 
     api.updateTrip(tripId, { status: 'in_progress' })
         .then(() => {
-            showNotification('Trip started!', 'success');
+            showNotification(t('notif_trip_started'), 'success');
             loadDriverTrips();
         })
         .catch(err => {
@@ -127,14 +127,14 @@ function startTrip(tripId) {
 }
 
 function stopTrip(tripId) {
-    if (!confirm('Complete this trip? Status will change to Completed.')) return;
+    if (!confirm(t('confirm_complete_trip'))) return;
 
     const btn = document.getElementById(`btn-stop-${tripId}`);
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Completing…'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_completing')}`; }
 
     api.updateTrip(tripId, { status: 'completed' })
         .then(() => {
-            showNotification('Trip completed!', 'success');
+            showNotification(t('notif_trip_completed'), 'success');
             loadDriverTrips();
         })
         .catch(err => {
@@ -167,9 +167,9 @@ function startDriverScanner() {
         (decodedText) => onQrScanSuccess(decodedText),
         () => {}
     ).then(() => {
-        showNotification('Scanner started — point at a ticket QR code.', 'success');
+        showNotification(t('notif_scanner_started'), 'success');
     }).catch(() => {
-        container.innerHTML = '<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-camera fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>Camera access denied. Use manual entry below.</p></div>';
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-camera fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>${t('dyn_camera_denied')}</p></div>`;
     });
 }
 
@@ -189,7 +189,7 @@ function onQrScanSuccess(token) {
 function verifyManualToken() {
     const input = document.getElementById('manual-ticket-token');
     const token = (input?.value || '').trim();
-    if (!token) { showNotification('Please enter a ticket token.', 'error'); return; }
+    if (!token) { showNotification(t('notif_enter_token'), 'error'); return; }
 
     const btn = document.querySelector('#driver-scanner button[onclick="verifyManualToken()"]');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
@@ -201,7 +201,7 @@ function verifyManualToken() {
 
 async function verifyTicketToken(token) {
     const resultDiv = document.getElementById('driver-scan-result');
-    resultDiv.innerHTML = '<div style="text-align:center;padding:20px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p>Verifying ticket...</p></div>';
+    resultDiv.innerHTML = `<div style="text-align:center;padding:20px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p>${t('dyn_verifying')}</p></div>`;
 
     try {
         const result = await api.verifyTicket(token);
@@ -216,23 +216,23 @@ async function verifyTicketToken(token) {
                     <div style="width:60px;height:60px;background:#1A8A72;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
                         <i class="fas fa-check" style="color:white;font-size:24px"></i>
                     </div>
-                    <h3 style="color:#1A8A72;margin-bottom:12px">Ticket Valid!</h3>
+                    <h3 style="color:#1A8A72;margin-bottom:12px">${t('dyn_ticket_valid')}</h3>
                     <div style="background:white;border-radius:8px;padding:12px;text-align:left;margin-bottom:12px">
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                            <span style="color:#888">Passenger</span><strong>${result.passenger_name}</strong>
+                            <span style="color:#888">${t('nav_passenger')}</span><strong>${result.passenger_name}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
                             <span style="color:#888">Seat</span><strong>#${b.seat_number || 'N/A'}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                            <span style="color:#888">From</span><strong>${b.pickup_stop || 'N/A'}</strong>
+                            <span style="color:#888">${t('label_from')}</span><strong>${b.pickup_stop || 'N/A'}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between">
-                            <span style="color:#888">To</span><strong>${b.dropoff_stop || 'N/A'}</strong>
+                            <span style="color:#888">${t('label_to')}</span><strong>${b.dropoff_stop || 'N/A'}</strong>
                         </div>
                     </div>
                     <button onclick="resumeScanner()" class="btn-primary" style="width:100%">
-                        <i class="fas fa-qrcode"></i> Scan Next Ticket
+                        <i class="fas fa-qrcode"></i> ${t('dyn_scan_next')}
                     </button>
                 </div>`;
         } else {
@@ -244,11 +244,11 @@ async function verifyTicketToken(token) {
                     <div style="width:60px;height:60px;background:#FF3B30;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
                         <i class="fas fa-times" style="color:white;font-size:24px"></i>
                     </div>
-                    <h3 style="color:#FF3B30;margin-bottom:8px">Invalid Ticket</h3>
+                    <h3 style="color:#FF3B30;margin-bottom:8px">${t('dyn_invalid_ticket')}</h3>
                     <p style="color:#666;margin-bottom:16px">${result.reason}</p>
                     ${result.boarded_at ? `<p style="color:#888;font-size:12px;margin-bottom:16px">Previously scanned at: ${new Date(result.boarded_at).toLocaleString()}</p>` : ''}
                     <button onclick="resumeScanner()" class="btn-secondary" style="width:100%">
-                        <i class="fas fa-redo"></i> Try Again
+                        <i class="fas fa-redo"></i> ${t('dyn_try_again')}
                     </button>
                 </div>`;
         }
@@ -260,7 +260,7 @@ async function verifyTicketToken(token) {
                 <i class="fas fa-exclamation-triangle" style="color:#FF3B30;font-size:32px;margin-bottom:8px"></i>
                 <p style="color:#FF3B30">${err.message || 'Verification failed'}</p>
                 <button onclick="resumeScanner()" class="btn-secondary" style="width:100%;margin-top:12px">
-                    <i class="fas fa-redo"></i> Try Again
+                    <i class="fas fa-redo"></i> ${t('dyn_try_again')}
                 </button>
             </div>`;
     }
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = form.querySelector('[type="submit"]');
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`; }
 
         const data = {};
         const name       = document.getElementById('driver-profile-name').value.trim();
@@ -320,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (phone && phone !== currentUser.phone_number)  data.phone_number = phone;
         if (password) {
             if (!currentPwd) {
-                showNotification('Please enter your current password to change it.', 'error');
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+                showNotification(t('notif_current_pwd_required'), 'error');
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_changes')}`; }
                 return;
             }
             data.current_password = currentPwd;
@@ -329,8 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (Object.keys(data).length === 0) {
-            showNotification('No changes to save.', 'info');
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+            showNotification(t('notif_no_changes'), 'info');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_changes')}`; }
             return;
         }
 
@@ -341,11 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('driverName').textContent = currentUser.full_name;
             document.getElementById('driver-profile-current-password').value = '';
             document.getElementById('driver-profile-password').value = '';
-            showNotification('Profile updated successfully!', 'success');
+            showNotification(t('notif_profile_updated'), 'success');
         } catch (err) {
             showNotification(err.message || 'Failed to update profile.', 'error');
         } finally {
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = `<i class="fas fa-save"></i> ${t('btn_save_changes')}`; }
         }
     });
 });

@@ -298,8 +298,8 @@ function loadSearchStops() {
     if (!fromSel || !toSel) return;
     if (availableStops.length) { populateStopOptions(availableStops); return; }
 
-    fromSel.innerHTML = '<option value="">Loading stops…</option>';
-    toSel.innerHTML = '<option value="">Loading stops…</option>';
+    fromSel.innerHTML = `<option value="">${t('dyn_loading_stops_opt')}</option>`;
+    toSel.innerHTML = `<option value="">${t('dyn_loading_stops_opt')}</option>`;
 
     api.getStops()
         .then(stops => {
@@ -320,7 +320,7 @@ function populateStopOptions(stops) {
 
     const prevFrom = fromSel.value;
     const prevTo = toSel.value;
-    const opts = ['<option value="">Select start</option>']
+    const opts = [`<option value="">${t('dyn_select_start')}</option>`]
         .concat(stops.map(s => `<option value="${s.id}">${s.name}</option>`))
         .join('');
 
@@ -336,19 +336,19 @@ function searchTrips() {
     const date = document.getElementById('travelDate').value;
 
     if (!fromStopId || !toStopId || !date) {
-        showNotification('Please fill all search fields', 'error');
+        showNotification(t('notif_search_fill_fields'), 'error');
         return;
     }
     if (fromStopId === toStopId) {
-        showNotification('Departure and destination must be different', 'error');
+        showNotification(t('notif_different_stops'), 'error');
         return;
     }
 
     const searchBtn = document.querySelector('#passenger-search button[onclick="searchTrips()"]');
-    if (searchBtn) { searchBtn.disabled = true; searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching…'; }
+    if (searchBtn) { searchBtn.disabled = true; searchBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_searching_btn')}`; }
 
     const resultsContainer = document.getElementById('search-results');
-    resultsContainer.innerHTML = '<div style="text-align:center;padding:24px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p style="margin-top:8px;color:#666">Searching trips…</p></div>';
+    resultsContainer.innerHTML = `<div style="text-align:center;padding:24px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p style="margin-top:8px;color:#666">${t('dyn_searching')}</p></div>`;
 
     // Always fetch fresh data on each search
     availableRouteStops = [];
@@ -368,7 +368,7 @@ function searchTrips() {
             resultsContainer.innerHTML = `<div style="text-align:center;padding:20px;color:#FF3B30"><i class="fas fa-exclamation-triangle"></i> Error: ${err.message}</div>`;
         })
         .finally(() => {
-            if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = '<i class="fas fa-search"></i> Search'; }
+            if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = `<i class="fas fa-search"></i> ${t('btn_search')}`; }
         });
 }
 
@@ -427,7 +427,7 @@ function displayTripResults(trips, fromStopId, toStopId) {
         container.innerHTML = `
             <div style="text-align:center;padding:32px;color:#888">
                 <i class="fas fa-bus fa-2x" style="margin-bottom:12px;opacity:.3"></i>
-                <p>No scheduled trips found from <strong>${fromName}</strong> to <strong>${toName}</strong> on that date.</p>
+                <p>${t('dyn_no_search_results')} <strong>${fromName}</strong> → <strong>${toName}</strong></p>
             </div>`;
         return;
     }
@@ -455,17 +455,17 @@ function displayTripResults(trips, fromStopId, toStopId) {
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-map-signs"></i>
-                        <span>${stops} stops · ${mins} min</span>
+                        <span>${stops} ${t('dyn_stops')} · ${mins} ${t('dyn_min')}</span>
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-chair"></i>
-                        <span>${occupied} seats occupied</span>
+                        <span>${occupied} ${t('dyn_seats_occupied')}</span>
                     </div>
                 </div>
                 <div class="trip-actions">
                     <button onclick="openBookingModal('${trip.id}','${fromStopId}','${toStopId}')"
                         class="btn-primary" style="width:100%">
-                        <i class="fas fa-ticket-alt"></i> Book Seat
+                        <i class="fas fa-ticket-alt"></i> ${t('dyn_book_seat')}
                     </button>
                 </div>
             </div>`;
@@ -541,7 +541,7 @@ function renderSeatGrid(capacity, takenSeats) {
 }
 
 function selectSeat(num, el, taken) {
-    if (taken) { showNotification('That seat is already taken', 'error'); return; }
+    if (taken) { showNotification(t('notif_seat_taken'), 'error'); return; }
     document.querySelectorAll('#booking-seat-grid div[onclick]').forEach(s => {
         s.style.background = '#f9f9f9';
         s.style.borderColor = '#ddd';
@@ -564,7 +564,7 @@ function confirmBooking() {
     if (!bookingContext || !selectedSeat) return;
     const btn = document.getElementById('booking-confirm-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking…';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t('dyn_saving')}`;
 
     api.createBooking({
         trip_id: bookingContext.tripId,
@@ -722,9 +722,9 @@ function loadUserBookings() {
                 container.innerHTML = `
                     <div style="text-align:center;padding:40px;color:#888">
                         <i class="fas fa-ticket-alt fa-3x" style="opacity:.2;margin-bottom:12px"></i>
-                        <p>No bookings yet.</p>
+                        <p>${t('dyn_no_bookings')}</p>
                         <button onclick="showPassengerSection('search')" class="btn-primary" style="margin-top:12px">
-                            Search for a trip
+                            ${t('btn_search')}
                         </button>
                     </div>`;
                 return;
@@ -787,14 +787,14 @@ function closeTicketModal() {
 }
 
 function cancelBooking(bookingId) {
-    if (!confirm('Cancel this booking? This cannot be undone.')) return;
+    if (!confirm(t('confirm_cancel_booking'))) return;
 
     const btn = document.querySelector(`button[onclick="cancelBooking('${bookingId}')"]`);
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
     api.cancelBooking(bookingId)
         .then(() => {
-            showNotification('Booking cancelled.', 'success');
+            showNotification(t('notif_booking_cancelled'), 'success');
             loadUserBookings();
         })
         .catch(err => {
@@ -829,7 +829,7 @@ function loadNotifications() {
         .then(notifications => {
             updateNotifBadge();
             if (notifications.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-bell fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>No notifications yet.</p></div>';
+                container.innerHTML = `<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-bell fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>${t('dyn_no_notifications')}</p></div>`;
                 return;
             }
             container.innerHTML = notifications.map(n => `
@@ -905,7 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
             if (password) {
                 if (!currentPwd) {
-                    showNotification('Please enter your current password to change it.', 'error');
+                    showNotification(t('notif_current_pwd_required'), 'error');
                     return;
                 }
                 data.current_password = currentPwd;
@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (Object.keys(data).length === 0) {
-                showNotification('No changes to save.', 'info');
+                showNotification(t('notif_no_changes'), 'info');
                 return;
             }
 
@@ -925,7 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('userName').textContent = currentUser.full_name;
                 document.getElementById('profile-current-password').value = '';
                 document.getElementById('profile-password').value = '';
-                showNotification('Profile updated successfully!', 'success');
+                showNotification(t('notif_profile_updated'), 'success');
             } catch (err) {
                 showNotification(err.message || 'Failed to update profile.', 'error');
             }
