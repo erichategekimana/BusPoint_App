@@ -492,7 +492,7 @@ const TRANSLATIONS = {
 
 // ── Core state ────────────────────────────────────────────────────────────────
 
-var currentLang = localStorage.getItem('bp_lang') || 'rw';
+var currentLang = localStorage.getItem('bp_lang') || 'en';
 
 // ── Translation lookup ────────────────────────────────────────────────────────
 
