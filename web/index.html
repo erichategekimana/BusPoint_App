@@ -403,17 +403,29 @@
                 <span>Bus Point Admin</span>
             </div>
             <div class="nav-menu">
+                <a href="#" onclick="showAdminSection('overview')" class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Overview</span>
+                </a>
                 <a href="#" onclick="showAdminSection('trips')" class="nav-item active">
                     <i class="fas fa-route"></i>
-                    <span>Today's Trips</span>
+                    <span>Trips</span>
                 </a>
                 <a href="#" onclick="showAdminSection('buses')" class="nav-item">
                     <i class="fas fa-bus"></i>
                     <span>Buses</span>
                 </a>
+                <a href="#" onclick="showAdminSection('routes')" class="nav-item">
+                    <i class="fas fa-road"></i>
+                    <span>Routes</span>
+                </a>
+                <a href="#" onclick="showAdminSection('stops')" class="nav-item">
+                    <i class="fas fa-map-pin"></i>
+                    <span>Stops</span>
+                </a>
                 <a href="#" onclick="showAdminSection('gps')" class="nav-item">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span>GPS Tracking</span>
+                    <span>GPS</span>
                 </a>
                 <a href="#" onclick="showAdminSection('notifications')" class="nav-item">
                     <i class="fas fa-bell"></i>
@@ -430,6 +442,17 @@
                 </button>
             </div>
         </nav>
+        <!-- Admin Overview Section -->
+        <div id="admin-overview" class="section">
+            <div class="section-header">
+                <h2>Overview</h2>
+                <p>Your company at a glance</p>
+            </div>
+            <div id="overview-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:0 16px 16px">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
         <!-- Admin Trips Section -->
         <div id="admin-trips" class="section active">
             <div class="section-header">
@@ -456,6 +479,45 @@
             <div id="buses-list" class="trips-list">
                 <!-- Buses will be populated here -->
             </div>
+        </div>
+
+        <!-- Admin Routes Section -->
+        <div id="admin-routes" class="section">
+            <div class="section-header">
+                <h2>Routes</h2>
+                <p>Manage bus routes and their stops</p>
+                <button onclick="openRouteModal()" class="btn-primary" style="margin-top:12px">
+                    <i class="fas fa-plus"></i> Add Route
+                </button>
+            </div>
+            <div id="routes-list" class="trips-list"></div>
+            <!-- Route-stops sub-panel -->
+            <div id="route-stops-panel" style="display:none;margin:0 16px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h3 id="route-stops-panel-title" style="margin:0;font-size:16px;color:#0D1B2A">Stops for Route</h3>
+                    <div style="display:flex;gap:8px">
+                        <button onclick="openRouteStopModal()" class="btn-primary" style="padding:8px 14px;font-size:13px">
+                            <i class="fas fa-plus"></i> Add Stop
+                        </button>
+                        <button onclick="closeRouteStopsPanel()" class="btn-secondary" style="padding:8px 14px;font-size:13px">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="route-stops-list"></div>
+            </div>
+        </div>
+
+        <!-- Admin Stops Section -->
+        <div id="admin-stops" class="section">
+            <div class="section-header">
+                <h2>Stops</h2>
+                <p>Manage all bus stops</p>
+                <button onclick="openStopModal()" class="btn-primary" style="margin-top:12px">
+                    <i class="fas fa-plus"></i> Add Stop
+                </button>
+            </div>
+            <div id="stops-list" class="trips-list"></div>
         </div>
 
         <!-- Admin GPS Section -->
@@ -686,6 +748,105 @@
                     </div>
                     <button type="submit" id="bus-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
                         <i class="fas fa-save"></i> Save Bus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Route Modal (Add / Edit) -->
+    <div id="admin-route-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="admin-route-modal-title">Add Route</h3>
+                <button onclick="closeRouteModal()" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="admin-route-form">
+                    <div class="form-group">
+                        <label>Route Code <span style="color:#FF3B30">*</span></label>
+                        <input type="text" id="route-form-code" placeholder="e.g. KGL-001" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Route Name <span style="color:#FF3B30">*</span></label>
+                        <input type="text" id="route-form-name" placeholder="e.g. Kigali City — Nyabugogo" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="route-form-status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="route-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
+                        <i class="fas fa-save"></i> Save Route
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Stop Modal (Add / Edit) -->
+    <div id="admin-stop-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="admin-stop-modal-title">Add Stop</h3>
+                <button onclick="closeStopModal()" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="admin-stop-form">
+                    <div class="form-group">
+                        <label>Stop Name <span style="color:#FF3B30">*</span></label>
+                        <input type="text" id="stop-form-name" placeholder="e.g. Nyabugogo Terminal" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Latitude <span style="color:#FF3B30">*</span></label>
+                        <input type="number" id="stop-form-lat" step="any" placeholder="e.g. -1.9441" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude <span style="color:#FF3B30">*</span></label>
+                        <input type="number" id="stop-form-lng" step="any" placeholder="e.g. 30.0619" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="stop-form-status">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="stop-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
+                        <i class="fas fa-save"></i> Save Stop
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Route-Stop Modal (Add / Edit) -->
+    <div id="admin-route-stop-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="admin-route-stop-modal-title">Add Stop to Route</h3>
+                <button onclick="closeRouteStopModal()" class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="admin-route-stop-form">
+                    <div class="form-group">
+                        <label>Stop <span style="color:#FF3B30">*</span></label>
+                        <select id="route-stop-form-stop" required>
+                            <option value="">Select stop</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stop Order <span style="color:#FF3B30">*</span></label>
+                        <input type="number" id="route-stop-form-order" min="1" placeholder="e.g. 1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Minutes from Start <small>(optional)</small></label>
+                        <input type="number" id="route-stop-form-minutes" min="0" placeholder="e.g. 0">
+                    </div>
+                    <button type="submit" id="route-stop-form-save-btn" class="btn-primary" style="width:100%;margin-top:8px">
+                        <i class="fas fa-save"></i> Save
                     </button>
                 </form>
             </div>

@@ -25,7 +25,7 @@ function showAdminDashboard() {
     document.getElementById('adminName').textContent = currentUser.full_name;
 
     loadTodayTrips();
-    showAdminSection('trips');
+    showAdminSection('overview');
 }
 
 function showAdminSection(section) {
@@ -36,15 +36,22 @@ function showAdminSection(section) {
     const activeNav = document.querySelector(`[onclick="showAdminSection('${section}')"]`);
     if (activeNav) activeNav.classList.add('active');
 
+    if (section !== 'routes') {
+        const panel = document.getElementById('route-stops-panel');
+        if (panel) panel.style.display = 'none';
+        activeRouteForStops = null;
+    }
+
     if (section === 'gps') {
         populateGPSTripSelect();
         initAdminGPSMap();
     } else {
         stopAdminBusPolling();
     }
-    if (section === 'buses') {
-        loadAdminBuses();
-    }
+    if (section === 'overview') loadAdminOverview();
+    if (section === 'buses') loadAdminBuses();
+    if (section === 'routes') loadAdminRoutes();
+    if (section === 'stops') loadAdminStops();
     if (section === 'profile') loadAdminProfile();
 }
 
@@ -781,6 +788,407 @@ function pushLocationToAPI(tripId, lat, lng, speed, heading) {
     }
 }
 
+// ── OVERVIEW ────────────────────────────────────────────────────────────────
+
+function loadAdminOverview() {
+    const container = document.getElementById('overview-stats');
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i></div>';
+
+    Promise.all([
+        api.getTrips({ company: currentUser.company }),
+        api.getBuses({ is_active: 'true' }),
+        api.getBusLocations().catch(() => []),
+    ]).then(([trips, buses, locations]) => {
+        const myBuses = buses.filter(b => b.company === currentUser.company);
+        const today = new Date().toISOString().split('T')[0];
+
+        const active    = trips.filter(t => t.status === 'in_progress').length;
+        const scheduled = trips.filter(t => t.status === 'scheduled').length;
+        const completedToday = trips.filter(t => {
+            if (t.status !== 'completed') return false;
+            const d = t.departure_time ? t.departure_time.split('T')[0] : '';
+            return d === today;
+        }).length;
+        const cancelled = trips.filter(t => t.status === 'cancelled').length;
+        const onRoute   = locations.length;
+
+        const cards = [
+            { icon: 'fa-play-circle',      color: '#1A8A72', label: 'Active Trips',       value: active },
+            { icon: 'fa-clock',            color: '#4A90D9', label: 'Scheduled',           value: scheduled },
+            { icon: 'fa-check-circle',     color: '#34C759', label: 'Completed Today',     value: completedToday },
+            { icon: 'fa-times-circle',     color: '#FF3B30', label: 'Cancelled',           value: cancelled },
+            { icon: 'fa-bus',              color: '#FF9500', label: 'Total Buses',         value: myBuses.length },
+            { icon: 'fa-map-marker-alt',   color: '#AF52DE', label: 'Buses on Route',      value: onRoute },
+        ];
+
+        container.innerHTML = cards.map(c => `
+            <div style="background:#fff;border-radius:14px;padding:18px 14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+                <div style="width:48px;height:48px;background:${c.color}18;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+                    <i class="fas ${c.icon}" style="color:${c.color};font-size:20px"></i>
+                </div>
+                <div style="font-size:28px;font-weight:700;color:#0D1B2A;line-height:1">${c.value}</div>
+                <div style="font-size:12px;color:#888;margin-top:4px">${c.label}</div>
+            </div>`).join('');
+    }).catch(err => {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#FF3B30;padding:20px">${err.message}</div>`;
+    });
+}
+
+// ── ROUTES ───────────────────────────────────────────────────────────────────
+
+let adminAllRoutes  = [];
+let adminAllStops   = [];
+let currentEditRouteId    = null;
+let currentEditStopId     = null;
+let currentEditRouteStopId = null;
+let activeRouteForStops   = null;  // route object whose stops are open in the panel
+
+function loadAdminRoutes() {
+    const container = document.getElementById('routes-list');
+    container.innerHTML = '<div class="text-center">Loading routes…</div>';
+
+    api.getRoutes()
+        .then(routes => {
+            adminAllRoutes = routes;
+            renderAdminRoutes(routes);
+        })
+        .catch(err => {
+            container.innerHTML = `<div class="text-center text-error">Failed to load routes: ${err.message}</div>`;
+        });
+}
+
+function renderAdminRoutes(routes) {
+    const container = document.getElementById('routes-list');
+    if (!routes.length) {
+        container.innerHTML = '<div class="text-center">No routes yet.</div>';
+        return;
+    }
+    container.innerHTML = routes.map(r => `
+        <div class="trip-card" id="route-card-${r.id}">
+            <div class="trip-header">
+                <div>
+                    <div class="trip-time">${r.route_code}</div>
+                    <div class="trip-route">${r.name}</div>
+                </div>
+                <span class="status-badge status-${r.is_active ? 'scheduled' : 'cancelled'}">${r.is_active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <div class="trip-actions">
+                <button onclick="openRouteStopsPanel('${r.id}')" class="btn-secondary" style="flex:1">
+                    <i class="fas fa-map-pin"></i> Stops
+                </button>
+                <button onclick="openRouteModal('${r.id}')" class="btn-secondary" style="flex:1">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="confirmDeleteRoute('${r.id}')" class="btn-danger" style="flex:1">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>`).join('');
+}
+
+function openRouteModal(routeId = null) {
+    currentEditRouteId = routeId;
+    document.getElementById('admin-route-modal-title').textContent = routeId ? 'Edit Route' : 'Add Route';
+    document.getElementById('admin-route-form').reset();
+
+    if (routeId) {
+        const r = adminAllRoutes.find(x => x.id === routeId);
+        if (r) {
+            document.getElementById('route-form-code').value   = r.route_code || '';
+            document.getElementById('route-form-name').value   = r.name || '';
+            document.getElementById('route-form-status').value = r.is_active ? 'true' : 'false';
+        }
+    }
+    document.getElementById('admin-route-modal').classList.add('active');
+}
+
+function closeRouteModal() {
+    document.getElementById('admin-route-modal').classList.remove('active');
+    currentEditRouteId = null;
+}
+
+function saveRouteForm(event) {
+    event.preventDefault();
+    const code     = document.getElementById('route-form-code').value.trim();
+    const name     = document.getElementById('route-form-name').value.trim();
+    const isActive = document.getElementById('route-form-status').value === 'true';
+
+    if (!code || !name) { showNotification('Code and name are required.', 'error'); return; }
+
+    const data = { route_code: code, name, is_active: isActive };
+    const btn  = document.getElementById('route-form-save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    const action = currentEditRouteId
+        ? api.updateRoute(currentEditRouteId, data)
+        : api.createRoute(data);
+
+    action.then(() => {
+        showNotification(currentEditRouteId ? 'Route updated.' : 'Route created.', 'success');
+        closeRouteModal();
+        adminAllRoutes = [];
+        loadAdminRoutes();
+    }).catch(err => {
+        showNotification('Error: ' + err.message, 'error');
+    }).finally(() => {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Route';
+    });
+}
+
+function confirmDeleteRoute(routeId) {
+    if (!confirm('Delete this route? This cannot be undone.')) return;
+    const btn = document.querySelector(`button[onclick="confirmDeleteRoute('${routeId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    api.deleteRoute(routeId)
+        .then(() => { showNotification('Route deleted.', 'success'); adminAllRoutes = []; loadAdminRoutes(); })
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
+        });
+}
+
+// ── ROUTE-STOPS PANEL ────────────────────────────────────────────────────────
+
+function openRouteStopsPanel(routeId) {
+    const route = adminAllRoutes.find(r => r.id === routeId);
+    activeRouteForStops = route || { id: routeId };
+    document.getElementById('route-stops-panel-title').textContent =
+        route ? `Stops for: ${route.route_code} — ${route.name}` : 'Route Stops';
+    document.getElementById('route-stops-panel').style.display = '';
+    loadRouteStopsForRoute(routeId);
+    // Scroll panel into view
+    document.getElementById('route-stops-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeRouteStopsPanel() {
+    document.getElementById('route-stops-panel').style.display = 'none';
+    activeRouteForStops = null;
+}
+
+function loadRouteStopsForRoute(routeId) {
+    const container = document.getElementById('route-stops-list');
+    container.innerHTML = '<div class="text-center">Loading…</div>';
+
+    Promise.all([
+        api.getRouteStops({ route_id: routeId }),
+        adminAllStops.length ? Promise.resolve(adminAllStops) : api.getStops(),
+    ]).then(([routeStops, stops]) => {
+        adminAllStops = stops;
+        if (!routeStops.length) {
+            container.innerHTML = '<div class="text-center" style="color:#888;padding:12px">No stops on this route yet. Add one above.</div>';
+            return;
+        }
+        const stopMap = Object.fromEntries(stops.map(s => [s.id, s]));
+        container.innerHTML = routeStops.map(rs => {
+            const s = stopMap[rs.stop_id] || {};
+            return `
+            <div class="trip-card" style="padding:12px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <strong style="font-size:14px">#${rs.stop_order} — ${s.name || rs.stop_id}</strong>
+                        <div style="font-size:12px;color:#888;margin-top:2px">
+                            ${rs.estimated_minutes_from_start != null ? `+${rs.estimated_minutes_from_start} min` : ''}
+                            ${s.latitude ? ` · ${parseFloat(s.latitude).toFixed(4)}, ${parseFloat(s.longitude).toFixed(4)}` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:6px">
+                        <button onclick="openRouteStopModal('${rs.id}')" class="btn-secondary" style="padding:6px 10px;font-size:12px">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="confirmDeleteRouteStop('${rs.id}')" class="btn-danger" style="padding:6px 10px;font-size:12px">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }).catch(err => {
+        container.innerHTML = `<div class="text-center text-error">${err.message}</div>`;
+    });
+}
+
+function openRouteStopModal(routeStopId = null) {
+    if (!activeRouteForStops) return;
+    currentEditRouteStopId = routeStopId;
+    document.getElementById('admin-route-stop-modal-title').textContent = routeStopId ? 'Edit Route Stop' : 'Add Stop to Route';
+    document.getElementById('admin-route-stop-form').reset();
+
+    // Populate stop select
+    const sel = document.getElementById('route-stop-form-stop');
+    sel.innerHTML = '<option value="">Select stop</option>' +
+        adminAllStops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+    if (routeStopId) {
+        // Find the route stop from currently rendered list — re-fetch if needed
+        api.request(`/route-stops/${routeStopId}`).then(rs => {
+            sel.value = rs.stop_id;
+            document.getElementById('route-stop-form-order').value   = rs.stop_order;
+            document.getElementById('route-stop-form-minutes').value = rs.estimated_minutes_from_start ?? '';
+        }).catch(() => {});
+    }
+    document.getElementById('admin-route-stop-modal').classList.add('active');
+}
+
+function closeRouteStopModal() {
+    document.getElementById('admin-route-stop-modal').classList.remove('active');
+    currentEditRouteStopId = null;
+}
+
+function saveRouteStopForm(event) {
+    event.preventDefault();
+    if (!activeRouteForStops) return;
+
+    const stopId  = document.getElementById('route-stop-form-stop').value;
+    const order   = parseInt(document.getElementById('route-stop-form-order').value);
+    const minutes = document.getElementById('route-stop-form-minutes').value;
+
+    if (!stopId || !order) { showNotification('Stop and order are required.', 'error'); return; }
+
+    const data = {
+        route_id: activeRouteForStops.id,
+        stop_id: stopId,
+        stop_order: order,
+        estimated_minutes_from_start: minutes !== '' ? parseInt(minutes) : null,
+    };
+
+    const btn = document.getElementById('route-stop-form-save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    const action = currentEditRouteStopId
+        ? api.updateRouteStop(currentEditRouteStopId, data)
+        : api.createRouteStop(data);
+
+    action.then(() => {
+        showNotification('Saved.', 'success');
+        closeRouteStopModal();
+        loadRouteStopsForRoute(activeRouteForStops.id);
+    }).catch(err => {
+        showNotification('Error: ' + err.message, 'error');
+    }).finally(() => {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save';
+    });
+}
+
+function confirmDeleteRouteStop(routeStopId) {
+    if (!confirm('Remove this stop from the route?')) return;
+    const btn = document.querySelector(`button[onclick="confirmDeleteRouteStop('${routeStopId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    api.deleteRouteStop(routeStopId)
+        .then(() => {
+            showNotification('Stop removed from route.', 'success');
+            if (activeRouteForStops) loadRouteStopsForRoute(activeRouteForStops.id);
+        })
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
+        });
+}
+
+// ── STOPS ────────────────────────────────────────────────────────────────────
+
+function loadAdminStops() {
+    const container = document.getElementById('stops-list');
+    container.innerHTML = '<div class="text-center">Loading stops…</div>';
+
+    api.getStops()
+        .then(stops => {
+            adminAllStops = stops;
+            renderAdminStops(stops);
+        })
+        .catch(err => {
+            container.innerHTML = `<div class="text-center text-error">Failed to load stops: ${err.message}</div>`;
+        });
+}
+
+function renderAdminStops(stops) {
+    const container = document.getElementById('stops-list');
+    if (!stops.length) {
+        container.innerHTML = '<div class="text-center">No stops yet.</div>';
+        return;
+    }
+    container.innerHTML = stops.map(s => `
+        <div class="trip-card" id="stop-card-${s.id}">
+            <div class="trip-header">
+                <div>
+                    <div class="trip-time">${s.name}</div>
+                    <div class="trip-route" style="font-size:12px;color:#888">${parseFloat(s.latitude).toFixed(5)}, ${parseFloat(s.longitude).toFixed(5)}</div>
+                </div>
+                <span class="status-badge status-${s.is_active ? 'scheduled' : 'cancelled'}">${s.is_active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <div class="trip-actions">
+                <button onclick="openStopModal('${s.id}')" class="btn-secondary" style="flex:1">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="confirmDeleteStop('${s.id}')" class="btn-danger" style="flex:1">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>`).join('');
+}
+
+function openStopModal(stopId = null) {
+    currentEditStopId = stopId;
+    document.getElementById('admin-stop-modal-title').textContent = stopId ? 'Edit Stop' : 'Add Stop';
+    document.getElementById('admin-stop-form').reset();
+
+    if (stopId) {
+        const s = adminAllStops.find(x => x.id === stopId);
+        if (s) {
+            document.getElementById('stop-form-name').value   = s.name || '';
+            document.getElementById('stop-form-lat').value    = s.latitude || '';
+            document.getElementById('stop-form-lng').value    = s.longitude || '';
+            document.getElementById('stop-form-status').value = s.is_active ? 'true' : 'false';
+        }
+    }
+    document.getElementById('admin-stop-modal').classList.add('active');
+}
+
+function closeStopModal() {
+    document.getElementById('admin-stop-modal').classList.remove('active');
+    currentEditStopId = null;
+}
+
+function saveStopForm(event) {
+    event.preventDefault();
+    const name     = document.getElementById('stop-form-name').value.trim();
+    const lat      = parseFloat(document.getElementById('stop-form-lat').value);
+    const lng      = parseFloat(document.getElementById('stop-form-lng').value);
+    const isActive = document.getElementById('stop-form-status').value === 'true';
+
+    if (!name || isNaN(lat) || isNaN(lng)) { showNotification('Name, latitude, and longitude are required.', 'error'); return; }
+
+    const data = { name, latitude: lat, longitude: lng, is_active: isActive };
+    const btn  = document.getElementById('stop-form-save-btn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    const action = currentEditStopId
+        ? api.updateStop(currentEditStopId, data)
+        : api.createStop(data);
+
+    action.then(() => {
+        showNotification(currentEditStopId ? 'Stop updated.' : 'Stop created.', 'success');
+        closeStopModal();
+        adminAllStops = [];
+        loadAdminStops();
+    }).catch(err => {
+        showNotification('Error: ' + err.message, 'error');
+    }).finally(() => {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Stop';
+    });
+}
+
+function confirmDeleteStop(stopId) {
+    if (!confirm('Delete this stop? This cannot be undone.')) return;
+    const btn = document.querySelector(`button[onclick="confirmDeleteStop('${stopId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    api.deleteStop(stopId)
+        .then(() => { showNotification('Stop deleted.', 'success'); adminAllStops = []; loadAdminStops(); })
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
+        });
+}
+
 // ── BROADCAST NOTIFICATIONS ──────────────────────────────────────────────────
 
 // ── PROFILE ─────────────────────────────────────────────────────────────────
@@ -802,6 +1210,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const busForm = document.getElementById('admin-bus-form');
     if (busForm) busForm.addEventListener('submit', saveBusForm);
+
+    const routeForm = document.getElementById('admin-route-form');
+    if (routeForm) routeForm.addEventListener('submit', saveRouteForm);
+
+    const stopForm = document.getElementById('admin-stop-form');
+    if (stopForm) stopForm.addEventListener('submit', saveStopForm);
+
+    const routeStopForm = document.getElementById('admin-route-stop-form');
+    if (routeStopForm) routeStopForm.addEventListener('submit', saveRouteStopForm);
 
     const broadcastForm = document.getElementById('broadcast-notification-form');
     if (broadcastForm) {

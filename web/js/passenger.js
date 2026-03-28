@@ -398,6 +398,7 @@ function matchTripsToDate(matchingRoutes, trips, date) {
                 if (t.route_id !== route.id) return false;
                 if (t.status === 'cancelled' || t.status === 'completed') return false;
                 if (!t.departure_time) return false;
+                if (new Date(t.departure_time) < new Date()) return false;
                 // Compare using local date to handle UTC offset
                 const tripDate = new Date(t.departure_time);
                 const tripLocalDate = tripDate.getFullYear() + '-'

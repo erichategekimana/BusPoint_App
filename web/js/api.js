@@ -98,11 +98,47 @@ class APIService {
         return this.request(`/routes/${id}`);
     }
 
+    async createRoute(data) {
+        return this.request('/routes', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    async updateRoute(id, data) {
+        return this.request(`/routes/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+
+    async deleteRoute(id) {
+        return this.request(`/routes/${id}`, { method: 'DELETE' });
+    }
+
     // ── Stops ───────────────────────────────────────────────────────────────
 
     async getStops(params = {}) {
         const qs = new URLSearchParams(params).toString();
         return this.request(`/stops${qs ? `?${qs}` : ''}`);
+    }
+
+    async createStop(data) {
+        return this.request('/stops', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    async updateStop(id, data) {
+        return this.request(`/stops/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+
+    async deleteStop(id) {
+        return this.request(`/stops/${id}`, { method: 'DELETE' });
+    }
+
+    async createRouteStop(data) {
+        return this.request('/route-stops', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    async updateRouteStop(id, data) {
+        return this.request(`/route-stops/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+
+    async deleteRouteStop(id) {
+        return this.request(`/route-stops/${id}`, { method: 'DELETE' });
     }
 
     // ── Buses ───────────────────────────────────────────────────────────────
