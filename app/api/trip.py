@@ -239,6 +239,14 @@ def create_trip():
     if not admin_company or target_user.company != admin_company:
         return jsonify({"error": "driver_not_in_your_company"}), 422
 
+    # Driver cannot be assigned to a new trip if they already have an active one
+    active = Trip.query.filter(
+        Trip.assigned_to == validated.assigned_to,
+        Trip.status.in_(["scheduled", "in_progress"]),
+    ).first()
+    if active:
+        return jsonify({"error": "driver_already_has_an_active_trip"}), 422
+
     trip = Trip(
         bus_id=validated.bus_id,
         route_id=validated.route_id,
@@ -317,6 +325,14 @@ def update_trip(trip_id: str):
             return jsonify({"error": "trip_must_be_assigned_to_a_driver"}), 422
         if target_user.company != admin_company:
             return jsonify({"error": "driver_not_in_your_company"}), 422
+        # Block re-assignment if that driver already has an active trip (other than this one)
+        active = Trip.query.filter(
+            Trip.assigned_to == validated.assigned_to,
+            Trip.status.in_(["scheduled", "in_progress"]),
+            Trip.id != trip.id,
+        ).first()
+        if active:
+            return jsonify({"error": "driver_already_has_an_active_trip"}), 422
 
     if validated.bus_id is not None:
         trip.bus_id = validated.bus_id

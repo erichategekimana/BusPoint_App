@@ -287,10 +287,6 @@
                     <i class="fas fa-route"></i>
                     <span>My Trips</span>
                 </a>
-                <a href="#" onclick="showDriverSection('gps')" class="nav-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>GPS Tracking</span>
-                </a>
                 <a href="#" onclick="showDriverSection('scanner')" class="nav-item">
                     <i class="fas fa-qrcode"></i>
                     <span>QR Scanner</span>
@@ -315,73 +311,6 @@
             </div>
             <div id="driver-trips-list" class="trips-list">
                 <!-- Trips will be populated here -->
-            </div>
-        </div>
-
-        <!-- Driver GPS Section -->
-        <div id="driver-gps" class="section">
-            <div class="section-header">
-                <h2>GPS Tracking</h2>
-                <p>Broadcast your location while on a trip</p>
-            </div>
-
-            <!-- Active trip selector -->
-            <div class="gps-trip-bar">
-                <label for="driver-gps-trip-select"><i class="fas fa-route"></i> Active Trip:</label>
-                <select id="driver-gps-trip-select">
-                    <option value="">— Select your active trip —</option>
-                </select>
-            </div>
-
-            <!-- Live map -->
-            <div class="map-container" style="margin-bottom:16px">
-                <div id="driver-map" class="map"></div>
-                <div class="map-controls">
-                    <button onclick="centerDriverMap()" class="map-btn" title="Center map">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Status + controls -->
-            <div class="gps-container">
-                <div class="gps-status">
-                    <div class="status-card">
-                        <h3>Tracking Status</h3>
-                        <div id="driver-gps-status-indicator" class="status-indicator inactive">
-                            <i class="fas fa-circle"></i>
-                            <span>Inactive</span>
-                        </div>
-                    </div>
-                    <div class="location-info">
-                        <div class="info-item">
-                            <label>Latitude:</label>
-                            <span id="driver-current-lat">--</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Longitude:</label>
-                            <span id="driver-current-lng">--</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Speed:</label>
-                            <span id="driver-current-speed">-- km/h</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Last Update:</label>
-                            <span id="driver-last-update">--</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gps-controls">
-                    <button onclick="startDriverGPS()" class="btn-primary">
-                        <i class="fas fa-play"></i>
-                        Start Tracking
-                    </button>
-                    <button onclick="stopDriverGPS()" class="btn-secondary">
-                        <i class="fas fa-stop"></i>
-                        Stop Tracking
-                    </button>
-                </div>
             </div>
         </div>
 

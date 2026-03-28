@@ -344,6 +344,9 @@ function searchTrips() {
         return;
     }
 
+    const searchBtn = document.querySelector('#passenger-search button[onclick="searchTrips()"]');
+    if (searchBtn) { searchBtn.disabled = true; searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching…'; }
+
     const resultsContainer = document.getElementById('search-results');
     resultsContainer.innerHTML = '<div style="text-align:center;padding:24px"><i class="fas fa-spinner fa-spin fa-2x" style="color:#1A8A72"></i><p style="margin-top:8px;color:#666">Searching trips…</p></div>';
 
@@ -363,6 +366,9 @@ function searchTrips() {
         })
         .catch(err => {
             resultsContainer.innerHTML = `<div style="text-align:center;padding:20px;color:#FF3B30"><i class="fas fa-exclamation-triangle"></i> Error: ${err.message}</div>`;
+        })
+        .finally(() => {
+            if (searchBtn) { searchBtn.disabled = false; searchBtn.innerHTML = '<i class="fas fa-search"></i> Search'; }
         });
 }
 
@@ -390,7 +396,7 @@ function matchTripsToDate(matchingRoutes, trips, date) {
         trips
             .filter(t => {
                 if (t.route_id !== route.id) return false;
-                if (t.status === 'cancelled') return false;
+                if (t.status === 'cancelled' || t.status === 'completed') return false;
                 if (!t.departure_time) return false;
                 // Compare using local date to handle UTC offset
                 const tripDate = new Date(t.departure_time);
@@ -781,12 +787,19 @@ function closeTicketModal() {
 
 function cancelBooking(bookingId) {
     if (!confirm('Cancel this booking? This cannot be undone.')) return;
+
+    const btn = document.querySelector(`button[onclick="cancelBooking('${bookingId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
     api.cancelBooking(bookingId)
         .then(() => {
             showNotification('Booking cancelled.', 'success');
             loadUserBookings();
         })
-        .catch(err => showNotification('Cancel failed: ' + err.message, 'error'));
+        .catch(err => {
+            showNotification('Cancel failed: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-times"></i> Cancel'; }
+        });
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────

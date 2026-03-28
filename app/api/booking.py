@@ -120,8 +120,11 @@ def create_booking():
 
     if not db.session.get(User, target_user_id):
         return jsonify({"error": "user_not_found"}), 404
-    if not db.session.get(Trip, validated.trip_id):
+    trip = db.session.get(Trip, validated.trip_id)
+    if not trip:
         return jsonify({"error": "trip_not_found"}), 404
+    if trip.status in ("completed", "cancelled"):
+        return jsonify({"error": "cannot_book_a_trip_that_is_" + trip.status}), 422
     if not db.session.get(Stop, validated.pickup_stop_id):
         return jsonify({"error": "pickup_stop_not_found"}), 404
     if not db.session.get(Stop, validated.dropoff_stop_id):
@@ -196,6 +199,13 @@ def verify_ticket():
 
     if booking.status == "cancelled":
         return jsonify({"valid": False, "reason": "This booking has been cancelled."}), 200
+
+    # Drivers may only scan tickets for their own assigned trip
+    current_user = g.current_user or {}
+    if current_user.get("role") == "driver":
+        trip = db.session.get(Trip, booking.trip_id)
+        if not trip or str(trip.assigned_to) != current_user.get("user_id"):
+            return jsonify({"valid": False, "reason": "This ticket is not for one of your trips."}), 200
 
     if booking.boarded_at is not None:
         return jsonify({

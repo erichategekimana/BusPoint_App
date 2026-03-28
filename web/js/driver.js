@@ -1,12 +1,6 @@
 // Driver Dashboard Logic
-let driverMap = null;
-let driverSelfMarker = null;
-let driverBusMarkers = [];
-let driverGPSWatchId = null;
-let isDriverGPSTracking = false;
-let driverGPSLocationId = null;
+
 let driverTrips = [];
-let driverBusList = [];
 
 // ── Dashboard entry ─────────────────────────────────────────────────────────
 
@@ -18,25 +12,31 @@ function showDriverDashboard() {
 
     document.getElementById('driverName').textContent = currentUser.full_name;
 
+    // Reset scanner state so a new driver starts fresh
+    stopDriverScanner();
+    scanValidCount = 0;
+    scanInvalidCount = 0;
+    scannerProcessing = false;
+    const validEl = document.getElementById('scan-valid-count');
+    const invalidEl = document.getElementById('scan-invalid-count');
+    const resultEl = document.getElementById('driver-scan-result');
+    if (validEl) validEl.textContent = '0';
+    if (invalidEl) invalidEl.textContent = '0';
+    if (resultEl) resultEl.innerHTML = '';
+
     loadDriverTrips();
     showDriverSection('trips');
 }
 
 function showDriverSection(section) {
     document.querySelectorAll('#driver-dashboard .section').forEach(el => el.classList.remove('active'));
-    document.getElementById(`driver-${section}`).classList.add('active');
+    document.getElementById(`driver-${section}`)?.classList.add('active');
 
     document.querySelectorAll('#driver-dashboard .nav-item').forEach(el => el.classList.remove('active'));
     const activeNav = document.querySelector(`#driver-dashboard [onclick="showDriverSection('${section}')"]`);
     if (activeNav) activeNav.classList.add('active');
 
-    if (section === 'gps') {
-        populateDriverGPSTripSelect();
-        initDriverGPSMap();
-    }
-    if (section !== 'scanner') {
-        stopDriverScanner();
-    }
+    if (section !== 'scanner') stopDriverScanner();
     if (section === 'profile') loadDriverProfile();
 }
 
@@ -66,8 +66,8 @@ function renderDriverTripsList(trips) {
 
     const html = trips.map(trip => {
         const canStart = trip.status === 'scheduled';
-        const canStop = trip.status === 'in_progress';
-        const isDone = trip.status === 'completed' || trip.status === 'cancelled';
+        const canStop  = trip.status === 'in_progress';
+        const isDone   = trip.status === 'completed' || trip.status === 'cancelled';
 
         return `
         <div class="trip-card" id="driver-trip-card-${trip.id}">
@@ -79,14 +79,8 @@ function renderDriverTripsList(trips) {
                 <span class="status-badge status-${trip.status}">${trip.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
             </div>
             <div class="trip-details">
-                <div class="detail-item">
-                    <i class="fas fa-bus"></i>
-                    <span>${trip.bus_plate}</span>
-                </div>
-                <div class="detail-item">
-                    <i class="fas fa-chair"></i>
-                    <span>${trip.available_seats} seats</span>
-                </div>
+                <div class="detail-item"><i class="fas fa-bus"></i><span>${trip.bus_plate}</span></div>
+                <div class="detail-item"><i class="fas fa-chair"></i><span>${trip.available_seats} seats</span></div>
                 ${trip.arrival_time ? `
                 <div class="detail-item">
                     <i class="fas fa-flag-checkered"></i>
@@ -95,15 +89,14 @@ function renderDriverTripsList(trips) {
             </div>
             <div class="trip-actions">
                 ${canStart ? `
-                <button onclick="startTrip('${trip.id}')" class="btn-primary" style="flex:1">
+                <button id="btn-start-${trip.id}" onclick="startTrip('${trip.id}')" class="btn-primary" style="flex:1">
                     <i class="fas fa-play"></i> Start Trip
                 </button>` : ''}
                 ${canStop ? `
-                <button onclick="stopTrip('${trip.id}')" class="btn-danger" style="flex:1">
+                <button id="btn-stop-${trip.id}" onclick="stopTrip('${trip.id}')" class="btn-danger" style="flex:1">
                     <i class="fas fa-stop"></i> Complete Trip
                 </button>` : ''}
-                ${isDone ? `
-                <span style="color:#888;font-size:13px;padding:8px">Trip ${trip.status.replace(/_/g, ' ')}</span>` : ''}
+                ${isDone ? `<span style="color:#888;font-size:13px;padding:8px">Trip ${trip.status.replace(/_/g, ' ')}</span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -113,217 +106,58 @@ function renderDriverTripsList(trips) {
 
 function formatDriverDateTime(iso) {
     if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleString('en-RW', { dateStyle: 'short', timeStyle: 'short' });
+    return new Date(iso).toLocaleString('en-RW', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function startTrip(tripId) {
     if (!confirm('Start this trip? Status will change to In Progress.')) return;
+
+    const btn = document.getElementById(`btn-start-${tripId}`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting…'; }
 
     api.updateTrip(tripId, { status: 'in_progress' })
         .then(() => {
             showNotification('Trip started!', 'success');
             loadDriverTrips();
         })
-        .catch(err => showNotification('Error: ' + err.message, 'error'));
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-play"></i> Start Trip'; }
+        });
 }
 
 function stopTrip(tripId) {
     if (!confirm('Complete this trip? Status will change to Completed.')) return;
+
+    const btn = document.getElementById(`btn-stop-${tripId}`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Completing…'; }
 
     api.updateTrip(tripId, { status: 'completed' })
         .then(() => {
             showNotification('Trip completed!', 'success');
             loadDriverTrips();
         })
-        .catch(err => showNotification('Error: ' + err.message, 'error'));
-}
-
-// ── GPS TRACKING MAP ─────────────────────────────────────────────────────────
-
-function populateDriverGPSTripSelect() {
-    const select = document.getElementById('driver-gps-trip-select');
-    if (!select) return;
-
-    const current = select.value;
-    select.innerHTML = '<option value="">— Select your active trip —</option>' +
-        driverTrips
-            .filter(t => t.status !== 'completed' && t.status !== 'cancelled')
-            .map(t => `<option value="${t.id}" data-bus-plate="${t.bus_plate}">${t.route_name} · ${formatDriverDateTime(t.departure_time)}</option>`)
-            .join('');
-
-    if (current) select.value = current;
-}
-
-function initDriverGPSMap() {
-    if (driverMap) return;
-
-    if (!window.maplibregl) {
-        const container = document.getElementById('driver-map');
-        if (container) container.innerHTML = '<div class="text-center">Map unavailable (MapLibre not loaded).</div>';
-        return;
-    }
-
-    const styleUrl = (typeof buildStadiaStyleUrl === 'function')
-        ? buildStadiaStyleUrl()
-        : (CONFIG.MAP_STYLE_URL || 'https://tiles.stadiamaps.com/styles/alidade_smooth.json');
-
-    driverMap = new maplibregl.Map({
-        container: 'driver-map',
-        style: styleUrl,
-        center: CONFIG.DEFAULT_CENTER,
-        zoom: CONFIG.DEFAULT_ZOOM
-    });
-
-    driverMap.addControl(new maplibregl.NavigationControl(), 'top-right');
-}
-
-function centerDriverMap() {
-    if (!driverMap) return;
-    driverMap.flyTo({ center: CONFIG.DEFAULT_CENTER, zoom: CONFIG.DEFAULT_ZOOM, essential: true });
-}
-
-// ── GPS TRACKING (geolocation → API) ─────────────────────────────────────────
-
-function startDriverGPS() {
-    if (isDriverGPSTracking) return;
-
-    const tripId = document.getElementById('driver-gps-trip-select').value;
-    if (!tripId) {
-        showNotification('Select a trip before starting tracking.', 'error');
-        return;
-    }
-
-    if (!navigator.geolocation) {
-        showNotification('Geolocation is not supported by your browser.', 'error');
-        return;
-    }
-
-    isDriverGPSTracking = true;
-    driverGPSLocationId = null;
-
-    const indicator = document.getElementById('driver-gps-status-indicator');
-    if (indicator) {
-        indicator.className = 'status-indicator active';
-        indicator.innerHTML = '<i class="fas fa-circle"></i><span>Active</span>';
-    }
-
-    // Load buses for bus_id lookup
-    api.getBuses().then(buses => { driverBusList = buses; }).catch(() => {});
-
-    driverGPSWatchId = navigator.geolocation.watchPosition(
-        position => {
-            const { latitude, longitude, speed, heading } = position.coords;
-            const speedKmh = speed != null ? (speed * 3.6).toFixed(1) : null;
-
-            const latEl = document.getElementById('driver-current-lat');
-            const lngEl = document.getElementById('driver-current-lng');
-            const spdEl = document.getElementById('driver-current-speed');
-            const updEl = document.getElementById('driver-last-update');
-            if (latEl) latEl.textContent = latitude.toFixed(6);
-            if (lngEl) lngEl.textContent = longitude.toFixed(6);
-            if (spdEl) spdEl.textContent = speedKmh != null ? `${speedKmh} km/h` : '— km/h';
-            if (updEl) updEl.textContent = new Date().toLocaleTimeString();
-
-            updateDriverSelfMarker(latitude, longitude);
-            pushDriverLocationToAPI(tripId, latitude, longitude, speedKmh, heading);
-        },
-        err => {
-            showNotification('Location error: ' + err.message, 'error');
-            stopDriverGPS();
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-    );
-}
-
-function stopDriverGPS() {
-    if (driverGPSWatchId !== null) {
-        navigator.geolocation.clearWatch(driverGPSWatchId);
-        driverGPSWatchId = null;
-    }
-
-    isDriverGPSTracking = false;
-    driverGPSLocationId = null;
-
-    const indicator = document.getElementById('driver-gps-status-indicator');
-    if (indicator) {
-        indicator.className = 'status-indicator inactive';
-        indicator.innerHTML = '<i class="fas fa-circle"></i><span>Inactive</span>';
-    }
-
-    ['driver-current-lat', 'driver-current-lng'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '--';
-    });
-    const spdEl = document.getElementById('driver-current-speed');
-    if (spdEl) spdEl.textContent = '-- km/h';
-    const updEl = document.getElementById('driver-last-update');
-    if (updEl) updEl.textContent = '--';
-}
-
-function updateDriverSelfMarker(lat, lng) {
-    if (!driverMap) return;
-
-    if (!driverSelfMarker) {
-        const el = document.createElement('div');
-        el.className = 'bus-marker admin-self-marker';
-        el.innerHTML = '<i class="fas fa-user"></i>';
-        el.title = 'Your location';
-
-        driverSelfMarker = new maplibregl.Marker(el)
-            .setLngLat([lng, lat])
-            .addTo(driverMap);
-    } else {
-        driverSelfMarker.setLngLat([lng, lat]);
-    }
-
-    driverMap.easeTo({ center: [lng, lat], duration: 500 });
-}
-
-function pushDriverLocationToAPI(tripId, lat, lng, speed, heading) {
-    const trip = driverTrips.find(t => t.id === tripId);
-    if (!trip) return;
-
-    const bus = driverBusList.find(b => b.plate_number === trip.bus_plate);
-    if (!bus) return;
-
-    const payload = {
-        latitude: lat,
-        longitude: lng,
-        speed: speed != null ? parseFloat(speed) : null,
-        heading: heading != null ? heading : null
-    };
-
-    if (driverGPSLocationId) {
-        api.updateBusLocation(driverGPSLocationId, payload).catch(() => {
-            driverGPSLocationId = null;
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-stop"></i> Complete Trip'; }
         });
-    } else {
-        api.createBusLocation({
-            bus_id: bus.id,
-            trip_id: tripId,
-            ...payload
-        }).then(loc => {
-            driverGPSLocationId = loc.id;
-        }).catch(() => {});
-    }
 }
+
+// No-op kept so auth.js logout cleanup doesn't throw
+function stopDriverGPS() {}
 
 // ── QR SCANNER ──────────────────────────────────────────────────────────────
 
-let html5QrScanner = null;
+let html5QrScanner   = null;
 let scannerProcessing = false;
-let scanValidCount = 0;
+let scanValidCount   = 0;
 let scanInvalidCount = 0;
 
 function startDriverScanner() {
     const container = document.getElementById('qr-reader');
     if (!container) return;
 
-    if (html5QrScanner) {
-        html5QrScanner.stop().catch(() => {});
-        html5QrScanner = null;
-    }
+    if (html5QrScanner) { html5QrScanner.stop().catch(() => {}); html5QrScanner = null; }
     container.innerHTML = '';
 
     html5QrScanner = new Html5Qrcode('qr-reader');
@@ -334,17 +168,13 @@ function startDriverScanner() {
         () => {}
     ).then(() => {
         showNotification('Scanner started — point at a ticket QR code.', 'success');
-    }).catch(err => {
-        console.error('Scanner error:', err);
+    }).catch(() => {
         container.innerHTML = '<div style="text-align:center;padding:40px;color:#888"><i class="fas fa-camera fa-3x" style="opacity:.2;margin-bottom:12px"></i><p>Camera access denied. Use manual entry below.</p></div>';
     });
 }
 
 function stopDriverScanner() {
-    if (html5QrScanner) {
-        html5QrScanner.stop().catch(() => {});
-        html5QrScanner = null;
-    }
+    if (html5QrScanner) { html5QrScanner.stop().catch(() => {}); html5QrScanner = null; }
     const container = document.getElementById('qr-reader');
     if (container) container.innerHTML = '';
 }
@@ -359,11 +189,14 @@ function onQrScanSuccess(token) {
 function verifyManualToken() {
     const input = document.getElementById('manual-ticket-token');
     const token = (input?.value || '').trim();
-    if (!token) {
-        showNotification('Please enter a ticket token.', 'error');
-        return;
-    }
-    verifyTicketToken(token);
+    if (!token) { showNotification('Please enter a ticket token.', 'error'); return; }
+
+    const btn = document.querySelector('#driver-scanner button[onclick="verifyManualToken()"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+    verifyTicketToken(token).finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i>'; }
+    });
 }
 
 async function verifyTicketToken(token) {
@@ -386,20 +219,16 @@ async function verifyTicketToken(token) {
                     <h3 style="color:#1A8A72;margin-bottom:12px">Ticket Valid!</h3>
                     <div style="background:white;border-radius:8px;padding:12px;text-align:left;margin-bottom:12px">
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                            <span style="color:#888">Passenger</span>
-                            <strong>${result.passenger_name}</strong>
+                            <span style="color:#888">Passenger</span><strong>${result.passenger_name}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                            <span style="color:#888">Seat</span>
-                            <strong>#${b.seat_number || 'N/A'}</strong>
+                            <span style="color:#888">Seat</span><strong>#${b.seat_number || 'N/A'}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                            <span style="color:#888">From</span>
-                            <strong>${b.pickup_stop || 'N/A'}</strong>
+                            <span style="color:#888">From</span><strong>${b.pickup_stop || 'N/A'}</strong>
                         </div>
                         <div style="display:flex;justify-content:space-between">
-                            <span style="color:#888">To</span>
-                            <strong>${b.dropoff_stop || 'N/A'}</strong>
+                            <span style="color:#888">To</span><strong>${b.dropoff_stop || 'N/A'}</strong>
                         </div>
                     </div>
                     <button onclick="resumeScanner()" class="btn-primary" style="width:100%">
@@ -443,19 +272,15 @@ function resumeScanner() {
     document.getElementById('driver-scan-result').innerHTML = '';
     const input = document.getElementById('manual-ticket-token');
     if (input) input.value = '';
-    if (html5QrScanner) {
-        try { html5QrScanner.resume(); } catch (e) {}
-    }
+    if (html5QrScanner) { try { html5QrScanner.resume(); } catch (e) {} }
 }
 
 function playTicketSound(type) {
     try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioCtx();
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+        osc.connect(gain); gain.connect(ctx.destination);
         gain.gain.value = 0.1;
         osc.frequency.value = type === 'success' ? 880 : 220;
         osc.start();
@@ -467,8 +292,8 @@ function playTicketSound(type) {
 
 function loadDriverProfile() {
     if (!currentUser) return;
-    document.getElementById('driver-profile-name').value = currentUser.full_name || '';
-    document.getElementById('driver-profile-email').value = currentUser.email || '';
+    document.getElementById('driver-profile-name').value  = currentUser.full_name    || '';
+    document.getElementById('driver-profile-email').value = currentUser.email        || '';
     document.getElementById('driver-profile-phone').value = currentUser.phone_number || '';
     document.getElementById('driver-profile-current-password').value = '';
     document.getElementById('driver-profile-password').value = '';
@@ -476,44 +301,51 @@ function loadDriverProfile() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('driver-profile-form');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const data = {};
-            const name = document.getElementById('driver-profile-name').value.trim();
-            const email = document.getElementById('driver-profile-email').value.trim();
-            const phone = document.getElementById('driver-profile-phone').value.trim();
-            const currentPwd = document.getElementById('driver-profile-current-password').value;
-            const password = document.getElementById('driver-profile-password').value;
+    if (!form) return;
 
-            if (name && name !== currentUser.full_name) data.full_name = name;
-            if (email && email !== currentUser.email) data.email = email;
-            if (phone && phone !== currentUser.phone_number) data.phone_number = phone;
-            if (password) {
-                if (!currentPwd) {
-                    showNotification('Please enter your current password to change it.', 'error');
-                    return;
-                }
-                data.current_password = currentPwd;
-                data.password = password;
-            }
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = form.querySelector('[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
 
-            if (Object.keys(data).length === 0) {
-                showNotification('No changes to save.', 'info');
+        const data = {};
+        const name       = document.getElementById('driver-profile-name').value.trim();
+        const email      = document.getElementById('driver-profile-email').value.trim();
+        const phone      = document.getElementById('driver-profile-phone').value.trim();
+        const currentPwd = document.getElementById('driver-profile-current-password').value;
+        const password   = document.getElementById('driver-profile-password').value;
+
+        if (name  && name  !== currentUser.full_name)     data.full_name    = name;
+        if (email && email !== currentUser.email)         data.email        = email;
+        if (phone && phone !== currentUser.phone_number)  data.phone_number = phone;
+        if (password) {
+            if (!currentPwd) {
+                showNotification('Please enter your current password to change it.', 'error');
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
                 return;
             }
+            data.current_password = currentPwd;
+            data.password = password;
+        }
 
-            try {
-                const updated = await api.updateProfile(data);
-                currentUser = { ...currentUser, ...updated };
-                localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
-                document.getElementById('driverName').textContent = currentUser.full_name;
-                document.getElementById('driver-profile-current-password').value = '';
-                document.getElementById('driver-profile-password').value = '';
-                showNotification('Profile updated successfully!', 'success');
-            } catch (err) {
-                showNotification(err.message || 'Failed to update profile.', 'error');
-            }
-        });
-    }
+        if (Object.keys(data).length === 0) {
+            showNotification('No changes to save.', 'info');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+            return;
+        }
+
+        try {
+            const updated = await api.updateProfile(data);
+            currentUser = { ...currentUser, ...updated };
+            localStorage.setItem(CONFIG.STORAGE_KEYS.USER_DATA, JSON.stringify(currentUser));
+            document.getElementById('driverName').textContent = currentUser.full_name;
+            document.getElementById('driver-profile-current-password').value = '';
+            document.getElementById('driver-profile-password').value = '';
+            showNotification('Profile updated successfully!', 'success');
+        } catch (err) {
+            showNotification(err.message || 'Failed to update profile.', 'error');
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+        }
+    });
 });

@@ -245,13 +245,19 @@ function saveBusForm(event) {
 function confirmDeleteBus(busId) {
     if (!confirm('Delete this bus? This cannot be undone.')) return;
 
+    const btn = document.querySelector(`button[onclick="confirmDeleteBus('${busId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
     api.deleteBus(busId)
         .then(() => {
             showNotification('Bus deleted.', 'success');
-            adminBusList = [];   // clear cache
+            adminBusList = [];
             loadAdminBuses();
         })
-        .catch(err => showNotification('Error: ' + err.message, 'error'));
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
+        });
 }
 
 // ── TRIP MODAL (Add / Edit) ──────────────────────────────────────────────────
@@ -416,12 +422,18 @@ function saveTripForm(event) {
 function confirmDeleteTrip(tripId) {
     if (!confirm('Delete this trip? This cannot be undone.')) return;
 
+    const btn = document.querySelector(`button[onclick="confirmDeleteTrip('${tripId}')"]`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
     api.deleteTrip(tripId)
         .then(() => {
             showNotification('Trip deleted.', 'success');
             loadTodayTrips();
         })
-        .catch(err => showNotification('Error: ' + err.message, 'error'));
+        .catch(err => {
+            showNotification('Error: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i>'; }
+        });
 }
 
 // ── GPS TRACKING MAP ─────────────────────────────────────────────────────────
