@@ -616,7 +616,7 @@ function selectPaymentMethod(method) {
     const active = document.querySelector(`.payment-method-btn[data-method="${method}"]`);
     if (active) { active.style.borderColor = '#1A8A72'; active.style.background = '#e8f5f2'; }
 
-    const isPhone = method === 'mtn' || method === 'airtel';
+    const isPhone = method === 'mtn';
     document.getElementById('payment-phone-field').style.display = isPhone ? '' : 'none';
     document.getElementById('payment-ref-field').style.display = isPhone ? 'none' : '';
 }
