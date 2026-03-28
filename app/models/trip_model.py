@@ -15,6 +15,7 @@ class Trip(db.Model):
     arrival_time = db.Column(db.DateTime(timezone=True))
     status = db.Column(db.String(20), server_default='scheduled')
     current_capacity = db.Column(db.Integer, nullable=False)
+    route_geometry = db.Column(db.Text, nullable=True)  # JSON array of [lng, lat] from ORS
 
     # Relationships
     bus = db.relationship('Bus', back_populates='trips')

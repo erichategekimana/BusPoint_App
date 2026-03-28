@@ -21,3 +21,6 @@ class Config:
     MOMO_API_KEY = os.environ.get("MOMO_API_KEY", "")
     MOMO_ENVIRONMENT = os.environ.get("MOMO_ENVIRONMENT", "sandbox")
     MOMO_CURRENCY = os.environ.get("MOMO_CURRENCY", "EUR")  # sandbox only supports EUR
+
+    # OpenRouteService — used for real-road GPS simulation
+    ORS_API_KEY = os.environ.get("ORS_API_KEY", "")

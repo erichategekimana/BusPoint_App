@@ -53,6 +53,35 @@ def list_route_stops():
     return jsonify([route_stop.to_dict() for route_stop in route_stops]), 200
 
 
+@route_stop_bp.get("/routes/<route_id>/coordinates")
+def get_route_coordinates(route_id: str):
+    """Return ordered stop coordinates for a route (for drawing polylines)."""
+    route_uuid, error = parse_uuid(route_id, "route_id")
+    if error:
+        return error
+    if not db.session.get(Route, route_uuid):
+        return jsonify({"error": "route_not_found"}), 404
+
+    route_stops = (
+        RouteStop.query
+        .filter_by(route_id=route_uuid)
+        .order_by(RouteStop.stop_order.asc())
+        .all()
+    )
+    coords = []
+    for rs in route_stops:
+        stop = db.session.get(Stop, rs.stop_id)
+        if stop:
+            coords.append({
+                "name": stop.name,
+                "latitude": float(stop.latitude),
+                "longitude": float(stop.longitude),
+                "stop_order": rs.stop_order,
+                "estimated_minutes": rs.estimated_minutes_from_start,
+            })
+    return jsonify(coords), 200
+
+
 @route_stop_bp.get("/route-stops/<route_stop_id>")
 def get_route_stop(route_stop_id: str):
     route_stop_uuid, error = parse_uuid(route_stop_id, "route_stop_id")

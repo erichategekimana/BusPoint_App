@@ -6,9 +6,12 @@ from uuid import UUID
 from flask import Blueprint, g, jsonify, request
 from pydantic import BaseModel, Field, ValidationError
 
+import json
+
 from app.auth import jwt_required, role_required
 from app.database import db
-from app.models import Bus, Route, Trip, User
+from app.models import Bus, BusLocation, Route, RouteStop, Stop, Trip, User
+from app.ors_service import fetch_route_geometry
 
 
 trip_bp = Blueprint("trip_api", __name__, url_prefix="/api")
@@ -50,6 +53,48 @@ def validate_payload(schema, payload: dict):
         return schema.model_validate(payload), None
     except ValidationError as exc:
         return None, model_errors(exc.errors())
+
+
+def _seed_bus_location(trip: Trip) -> None:
+    """Fetch ORS road geometry, cache it, and create initial bus_location."""
+    # Fetch real road geometry from OpenRouteService
+    coords = fetch_route_geometry(trip.route_id)
+    if coords and len(coords) >= 2:
+        trip.route_geometry = json.dumps(coords)
+        start_lng, start_lat = coords[0]
+    else:
+        # Fallback: use first stop coordinates
+        first_rs = (
+            RouteStop.query
+            .filter_by(route_id=trip.route_id)
+            .order_by(RouteStop.stop_order.asc())
+            .first()
+        )
+        if not first_rs:
+            return
+        stop = db.session.get(Stop, first_rs.stop_id)
+        if not stop:
+            return
+        start_lat = float(stop.latitude)
+        start_lng = float(stop.longitude)
+
+    # Remove any stale location for this bus
+    BusLocation.query.filter_by(bus_id=trip.bus_id).delete()
+
+    location = BusLocation(
+        bus_id=trip.bus_id,
+        trip_id=trip.id,
+        latitude=start_lat,
+        longitude=start_lng,
+        speed=0,
+        heading=0,
+    )
+    db.session.add(location)
+
+
+def _remove_bus_location(trip: Trip) -> None:
+    """Delete the bus_location row when the trip ends."""
+    BusLocation.query.filter_by(bus_id=trip.bus_id).delete()
 
 
 def _get_admin_company(current_user: dict) -> str | None:
@@ -119,6 +164,46 @@ def get_trip(trip_id: str):
     if not trip:
         return jsonify({"error": "trip_not_found"}), 404
     return jsonify(trip.to_dict()), 200
+
+
+@trip_bp.get("/trips/<trip_id>/geometry")
+def get_trip_geometry(trip_id: str):
+    """Return the cached ORS road geometry for a trip (public, used by maps)."""
+    trip_uuid, error = parse_uuid(trip_id, "trip_id")
+    if error:
+        return error
+    trip = db.session.get(Trip, trip_uuid)
+    if not trip:
+        return jsonify({"error": "trip_not_found"}), 404
+
+    if not trip.route_geometry:
+        return jsonify({"coordinates": [], "stops": []}), 200
+
+    try:
+        coordinates = json.loads(trip.route_geometry)
+    except (json.JSONDecodeError, TypeError):
+        coordinates = []
+
+    # Also return stop info for markers
+    route_stops = (
+        RouteStop.query
+        .filter_by(route_id=trip.route_id)
+        .order_by(RouteStop.stop_order.asc())
+        .all()
+    )
+    stops = []
+    for rs in route_stops:
+        stop = db.session.get(Stop, rs.stop_id)
+        if stop:
+            stops.append({
+                "name": stop.name,
+                "latitude": float(stop.latitude),
+                "longitude": float(stop.longitude),
+                "stop_order": rs.stop_order,
+                "estimated_minutes": rs.estimated_minutes_from_start,
+            })
+
+    return jsonify({"coordinates": coordinates, "stops": stops}), 200
 
 
 # ── WRITE endpoints ─────────────────────────────────────────────────────────
@@ -202,6 +287,11 @@ def update_trip(trip_id: str):
         if new_status not in allowed_transitions.get(trip.status, []):
             return jsonify({"error": f"cannot_transition_from_{trip.status}_to_{new_status}"}), 422
         trip.status = new_status
+        # Seed or clean up simulated GPS location
+        if new_status == "in_progress":
+            _seed_bus_location(trip)
+        elif new_status == "completed":
+            _remove_bus_location(trip)
         db.session.commit()
         return jsonify(trip.to_dict()), 200
 
@@ -239,7 +329,13 @@ def update_trip(trip_id: str):
     if validated.arrival_time is not None:
         trip.arrival_time = validated.arrival_time
     if validated.status is not None:
+        old_status = trip.status
         trip.status = validated.status
+        # Seed or clean up simulated GPS location on status change
+        if validated.status == "in_progress" and old_status != "in_progress":
+            _seed_bus_location(trip)
+        elif validated.status in ("completed", "cancelled") and old_status == "in_progress":
+            _remove_bus_location(trip)
     if validated.current_capacity is not None:
         trip.current_capacity = validated.current_capacity
 
@@ -268,6 +364,7 @@ def delete_trip(trip_id: str):
     if not _trip_belongs_to_company(trip, admin_company):
         return jsonify({"error": "forbidden"}), 403
 
+    _remove_bus_location(trip)
     db.session.delete(trip)
     db.session.commit()
     return jsonify({"status": "deleted"}), 200

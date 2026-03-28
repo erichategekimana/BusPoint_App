@@ -98,6 +98,7 @@ create table if not exists trips
 	arrival_time timestamp with time zone,
 	status varchar(20) default 'scheduled'::character varying,
 	current_capacity integer not null,
+	route_geometry text,
 	created_at timestamp with time zone default CURRENT_TIMESTAMP
 );
 
@@ -184,3 +185,6 @@ create table if not exists bus_locations
 
 -- store only the "latest" location per bus to avoid overloading the database with unnecessary history.
 ALTER TABLE bus_locations ADD CONSTRAINT unique_bus_id UNIQUE (bus_id);
+
+-- ORS road geometry cached on each trip (JSON array of [lng, lat] pairs)
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS route_geometry text;

@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.database import db
+from app.gps_simulator import tick as gps_tick
 from app.models import Booking, Notification, Trip
 
 log = logging.getLogger(__name__)
@@ -92,5 +93,13 @@ def init_scheduler(app):
         id="departure_reminders",
         replace_existing=True,
     )
+    _scheduler.add_job(
+        func=gps_tick,
+        trigger="interval",
+        seconds=10,
+        args=[app],
+        id="gps_simulation",
+        replace_existing=True,
+    )
     _scheduler.start()
-    log.info("Departure reminder scheduler started (every 5 min)")
+    log.info("Scheduler started (departure reminders every 5 min, GPS simulation every 10 s)")

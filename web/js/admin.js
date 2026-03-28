@@ -1,7 +1,10 @@
 // Admin Dashboard Logic
 let adminMap = null;
 let adminSelfMarker = null;
-let adminBusMarkers = [];
+let adminBusMarkers = {};          // keyed by bus_id → marker (persistent, no flicker)
+let adminRouteLinesDrawn = {};     // keyed by trip_id → 'fetching' | 'drawn' | false
+let adminStopMarkers = [];         // stop dot markers on admin map
+let adminBusLocationInterval = null;
 // let gpsWatchId = null;
 // let isGPSTracking = false;
 let currentGPSLocationId = null;   // id of the BusLocation record we're PATCHing
@@ -36,6 +39,8 @@ function showAdminSection(section) {
     if (section === 'gps') {
         populateGPSTripSelect();
         initAdminGPSMap();
+    } else {
+        stopAdminBusPolling();
     }
     if (section === 'buses') {
         loadAdminBuses();
@@ -437,7 +442,7 @@ function populateGPSTripSelect() {
 
 function initAdminGPSMap() {
     if (adminMap) {
-        refreshAdminBusMarkers();
+        startAdminBusPolling();
         return;
     }
 
@@ -461,8 +466,21 @@ function initAdminGPSMap() {
     adminMap.addControl(new maplibregl.NavigationControl(), 'top-right');
 
     adminMap.on('load', () => {
-        refreshAdminBusMarkers();
+        startAdminBusPolling();
     });
+}
+
+function startAdminBusPolling() {
+    stopAdminBusPolling();
+    refreshAdminBusMarkers();
+    adminBusLocationInterval = setInterval(refreshAdminBusMarkers, CONFIG.BUS_LOCATION_UPDATE_INTERVAL || 5000);
+}
+
+function stopAdminBusPolling() {
+    if (adminBusLocationInterval) {
+        clearInterval(adminBusLocationInterval);
+        adminBusLocationInterval = null;
+    }
 }
 
 function centerAdminMap() {
@@ -473,37 +491,150 @@ function centerAdminMap() {
 function refreshAdminBusMarkers() {
     if (!adminMap) return;
 
-    adminBusMarkers.forEach(m => m.remove());
-    adminBusMarkers = [];
-
     api.getBusLocations()
         .then(locations => {
+            const seen = new Set();
+
             locations.forEach(loc => {
                 if (!loc.latitude || !loc.longitude) return;
+                const busId = loc.bus_id;
+                seen.add(busId);
 
-                const el = document.createElement('div');
-                el.className = 'bus-marker';
-                el.innerHTML = '<i class="fas fa-bus"></i>';
-
-                const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+                const lngLat = [parseFloat(loc.longitude), parseFloat(loc.latitude)];
+                const updatedAt = loc['last_updated '] || loc.last_updated || new Date().toISOString();
+                const popupHtml = `
                     <div class="popup-content">
                         <h4><i class="fas fa-bus"></i> Bus</h4>
                         <p>Trip: ${loc.trip_id.slice(0, 8)}…</p>
                         <p>Speed: ${loc.speed != null ? loc.speed + ' km/h' : '—'}</p>
                         <p>Heading: ${loc.heading != null ? loc.heading + '°' : '—'}</p>
-                        <small>Updated: ${loc.last_updated  ? new Date(loc.last_updated ).toLocaleTimeString() : '—'}</small>
-                    </div>
-                `);
+                        <small>Updated: ${new Date(updatedAt).toLocaleTimeString()}</small>
+                    </div>`;
 
-                const marker = new maplibregl.Marker(el)
-                    .setLngLat([parseFloat(loc.longitude), parseFloat(loc.latitude)])
-                    .setPopup(popup)
-                    .addTo(adminMap);
+                if (adminBusMarkers[busId]) {
+                    // Update existing marker position (no flicker)
+                    adminBusMarkers[busId].setLngLat(lngLat);
+                    adminBusMarkers[busId].getPopup().setHTML(popupHtml);
+                } else {
+                    // Create new marker
+                    const el = document.createElement('div');
+                    el.className = 'bus-marker';
+                    el.innerHTML = '<i class="fas fa-bus"></i>';
+                    const marker = new maplibregl.Marker(el)
+                        .setLngLat(lngLat)
+                        .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml))
+                        .addTo(adminMap);
+                    adminBusMarkers[busId] = marker;
+                }
 
-                adminBusMarkers.push(marker);
+                // Draw route line for this bus's trip
+                if (loc.trip_id) {
+                    drawAdminRouteForTrip(loc.trip_id);
+                }
             });
+
+            // Remove markers for buses no longer reporting
+            Object.keys(adminBusMarkers).forEach(busId => {
+                if (!seen.has(busId)) {
+                    adminBusMarkers[busId].remove();
+                    delete adminBusMarkers[busId];
+                }
+            });
+
+            // Clean up route lines for ended trips
+            adminCleanupRouteLines(locations);
         })
-        .catch(() => { /* silent fail — map still works without locations */ });
+        .catch(() => { /* silent — map still works without locations */ });
+}
+
+function drawAdminRouteForTrip(tripId) {
+    const map = adminMap;
+    if (!map) return;
+
+    const sourceId = `admin-route-${tripId}`;
+
+    // Already drawn on the map?
+    if (map.getSource(sourceId)) return;
+
+    // Already fetching?
+    if (adminRouteLinesDrawn[tripId] === 'fetching') return;
+    adminRouteLinesDrawn[tripId] = 'fetching';
+
+    api.getTripGeometry(tripId)
+        .then(data => {
+            if (!data) return;
+            const { coordinates, stops } = data;
+            const currentMap = adminMap;
+            if (!currentMap) return;
+
+            const coords = (coordinates && coordinates.length >= 2)
+                ? coordinates
+                : (stops && stops.length >= 2 ? stops.map(s => [s.longitude, s.latitude]) : null);
+
+            if (!coords) { adminRouteLinesDrawn[tripId] = false; return; }
+
+            _addAdminRouteToMap(currentMap, sourceId, tripId, coords, stops || []);
+            adminRouteLinesDrawn[tripId] = 'drawn';
+        })
+        .catch(() => { adminRouteLinesDrawn[tripId] = false; });
+}
+
+function _addAdminRouteToMap(map, sourceId, tripId, coordinates, stops) {
+    if (!map.isStyleLoaded()) {
+        map.once('idle', () => _addAdminRouteToMap(map, sourceId, tripId, coordinates, stops));
+        return;
+    }
+    if (map.getSource(sourceId)) return;
+
+    map.addSource(sourceId, {
+        type: 'geojson',
+        data: { type: 'Feature', geometry: { type: 'LineString', coordinates } }
+    });
+    map.addLayer({
+        id: sourceId,
+        type: 'line',
+        source: sourceId,
+        paint: { 'line-color': '#4A90D9', 'line-width': 4, 'line-opacity': 0.8 }
+    });
+
+    stops.forEach((s, i) => {
+        const el = document.createElement('div');
+        el.style.cssText = 'width:14px;height:14px;background:#4A90D9;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3);cursor:pointer;';
+        const popup = new maplibregl.Popup({ offset: 15 }).setHTML(`
+            <div style="padding:6px;min-width:120px">
+                <strong>${s.name}</strong><br>
+                <small>Stop ${i + 1} of ${stops.length}</small><br>
+                <small>ETA: +${s.estimated_minutes} min</small>
+            </div>`);
+        const marker = new maplibregl.Marker(el)
+            .setLngLat([s.longitude, s.latitude])
+            .setPopup(popup)
+            .addTo(map);
+        adminStopMarkers.push({ marker, tripId });
+    });
+}
+
+function adminCleanupRouteLines(activeLocations) {
+    const map = adminMap;
+    if (!map) return;
+
+    const activeTripIds = new Set(activeLocations.map(l => l.trip_id).filter(Boolean));
+
+    Object.keys(adminRouteLinesDrawn).forEach(tripId => {
+        if (!activeTripIds.has(tripId)) {
+            const sourceId = `admin-route-${tripId}`;
+            try {
+                if (map.getLayer(sourceId)) map.removeLayer(sourceId);
+                if (map.getSource(sourceId)) map.removeSource(sourceId);
+            } catch (e) {}
+            delete adminRouteLinesDrawn[tripId];
+
+            adminStopMarkers = adminStopMarkers.filter(sm => {
+                if (sm.tripId === tripId) { sm.marker.remove(); return false; }
+                return true;
+            });
+        }
+    });
 }
 
 // ── GPS TRACKING (geolocation → API) ─────────────────────────────────────────

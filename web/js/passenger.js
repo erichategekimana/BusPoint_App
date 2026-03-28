@@ -2,6 +2,8 @@
 
 let busMarkers = {};               // keyed by bus_id → maplibregl.Marker
 let busLocationInterval = null;
+let routeLinesDrawn = {};          // keyed by route_id → true (prevents re-fetching)
+let stopMarkers = [];              // stop markers on map
 let availableStops = [];
 let availableRouteStops = [];
 let selectedSeat = null;
@@ -133,6 +135,11 @@ function refreshBusLocations() {
                         .addTo(window.passengerMap);
                     busMarkers[id] = marker;
                 }
+
+                // Draw route line for this bus's trip (once per route)
+                if (loc.trip_id) {
+                    drawRouteForTrip(loc.trip_id);
+                }
             });
 
             // Remove markers for buses no longer reporting
@@ -142,8 +149,132 @@ function refreshBusLocations() {
                     delete busMarkers[id];
                 }
             });
+
+            // Clean up route lines for trips that are no longer active
+            cleanupRouteLines(locations);
         })
         .catch(() => {}); // silent — no buses live is normal
+}
+
+function drawRouteForTrip(tripId) {
+    const map = window.passengerMap;
+    if (!map) return;
+
+    const sourceId = `route-line-${tripId}`;
+
+    // Check if route line is ACTUALLY on the map (survives refresh check)
+    // If source exists on map, no need to re-draw
+    if (map.getSource(sourceId)) return;
+
+    // If we're already fetching for this trip, skip
+    if (routeLinesDrawn[tripId] === 'fetching') return;
+    routeLinesDrawn[tripId] = 'fetching';
+
+    // Use the trip geometry endpoint (ORS real roads)
+    api.getTripGeometry(tripId)
+        .then(data => {
+            if (!data) return;
+            const { coordinates, stops } = data;
+            const currentMap = window.passengerMap;
+            if (!currentMap) return;
+
+            // coordinates = [[lng, lat], ...] from ORS (real road geometry)
+            // stops = [{name, latitude, longitude, stop_order, estimated_minutes}, ...]
+            if (!coordinates || coordinates.length < 2) {
+                // Fallback: draw straight lines between stops
+                if (!stops || stops.length < 2) { routeLinesDrawn[tripId] = false; return; }
+                const fallbackCoords = stops.map(s => [s.longitude, s.latitude]);
+                _addRouteToMap(currentMap, sourceId, tripId, fallbackCoords, stops);
+            } else {
+                _addRouteToMap(currentMap, sourceId, tripId, coordinates, stops);
+            }
+            routeLinesDrawn[tripId] = 'drawn';
+        })
+        .catch(() => {
+            routeLinesDrawn[tripId] = false; // allow retry
+        });
+}
+
+function _addRouteToMap(map, sourceId, tripId, coordinates, stops) {
+    // Wait for style to be fully loaded before adding sources/layers
+    if (!map.isStyleLoaded()) {
+        map.once('idle', () => _addRouteToMap(map, sourceId, tripId, coordinates, stops));
+        return;
+    }
+
+    // Prevent duplicate sources (race condition guard)
+    if (map.getSource(sourceId)) return;
+
+    const geojson = {
+        type: 'Feature',
+        geometry: {
+            type: 'LineString',
+            coordinates: coordinates
+        }
+    };
+
+    map.addSource(sourceId, { type: 'geojson', data: geojson });
+    map.addLayer({
+        id: sourceId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+            'line-color': '#4A90D9',
+            'line-width': 4,
+            'line-opacity': 0.8
+        }
+    });
+
+    // Add stop markers along the route
+    if (stops && stops.length) {
+        stops.forEach((s, i) => {
+            const el = document.createElement('div');
+            el.className = 'stop-marker';
+            el.style.cssText = 'width:14px;height:14px;background:#4A90D9;border:2px solid #fff;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3);cursor:pointer;';
+
+            const popup = new maplibregl.Popup({ offset: 15 }).setHTML(`
+                <div style="padding:6px;min-width:120px">
+                    <strong>${s.name}</strong><br>
+                    <small>Stop ${i + 1} of ${stops.length}</small><br>
+                    <small>ETA: +${s.estimated_minutes} min</small>
+                </div>
+            `);
+
+            const marker = new maplibregl.Marker(el)
+                .setLngLat([s.longitude, s.latitude])
+                .setPopup(popup)
+                .addTo(map);
+
+            stopMarkers.push({ marker, tripId });
+        });
+    }
+}
+
+function cleanupRouteLines(activeLocations) {
+    const map = window.passengerMap;
+    if (!map) return;
+
+    const activeTripIds = new Set(activeLocations.map(l => l.trip_id).filter(Boolean));
+
+    Object.keys(routeLinesDrawn).forEach(tripId => {
+        if (!activeTripIds.has(tripId)) {
+            const sourceId = `route-line-${tripId}`;
+            try {
+                if (map.getLayer(sourceId)) map.removeLayer(sourceId);
+                if (map.getSource(sourceId)) map.removeSource(sourceId);
+            } catch (e) { /* map may not be ready */ }
+            delete routeLinesDrawn[tripId];
+
+            // Remove stop markers for this trip
+            stopMarkers = stopMarkers.filter(sm => {
+                if (sm.tripId === tripId) {
+                    sm.marker.remove();
+                    return false;
+                }
+                return true;
+            });
+        }
+    });
 }
 
 function centerMap() {

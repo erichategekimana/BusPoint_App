@@ -220,6 +220,14 @@ class APIService {
         });
     }
 
+    async getRouteCoordinates(routeId) {
+        return this.request(`/routes/${routeId}/coordinates`);
+    }
+
+    async getTripGeometry(tripId) {
+        return this.request(`/trips/${tripId}/geometry`);
+    }
+
     async updateBusLocation(id, data) {
         return this.request(`/bus-locations/${id}`, {
             method: 'PATCH',
