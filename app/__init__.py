@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -13,8 +14,13 @@ migrate = Migrate()
 def create_app() -> Flask:
     load_dotenv()
 
-    app = Flask(__name__)
+    web_folder = os.path.join(os.path.dirname(__file__), '..', 'web')
+    app = Flask(__name__, static_folder=web_folder, static_url_path='')
     app.config.from_object(Config)
+
+    @app.route('/')
+    def index():
+        return app.send_static_file('index.html')
 
     if not app.config.get("SQLALCHEMY_DATABASE_URI"):
         raise RuntimeError("Missing BP_POSTGRES_DATABASE_URI (or BP_SQLALCHEMY_DATABASE_URI) environment variable")
