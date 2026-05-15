@@ -187,6 +187,7 @@ create table if not exists bus_locations
 
 ALTER TABLE routes ADD COLUMN base_price numeric(10,2) default 500.00;
 ALTER TABLE trips ADD CONSTRAINT trips_status_check CHECK (status IN ('scheduled', 'active', 'completed', 'cancelled'));
+ALTER TABLE trips ADD COLUMN current_speed real;
 
 -- store only the "latest" location per bus to avoid overloading the database with unnecessary history.
 ALTER TABLE bus_locations ADD CONSTRAINT unique_bus_id UNIQUE (bus_id);

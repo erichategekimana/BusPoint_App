@@ -17,6 +17,7 @@ class Trip(db.Model):
     current_capacity = db.Column(db.Integer, nullable=False)
     current_lat = db.Column(db.Float, nullable=True)  # Updated by driver app
     current_lon = db.Column(db.Float, nullable=True)  # Updated by driver app
+    current_speed = db.Column(db.Float, nullable=True)  # Updated by driver app
     driver_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     STATUS_SCHEDULED = 'scheduled'
     STATUS_ACTIVE = 'active'
@@ -40,5 +41,7 @@ class Trip(db.Model):
             "arrival_time": self.arrival_time.isoformat() if self.arrival_time else None,
             "status": self.status,
             "available_seats": self.current_capacity,
+            "capacity": self.bus.capacity,
+            "bus_type": self.bus.bus_type,
             "driver_id": str(self.driver_id) if self.driver_id else None
         }

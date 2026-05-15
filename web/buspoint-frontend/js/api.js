@@ -108,6 +108,16 @@ const API = {
         getMyBookings() {
             return API.request('/bookings/me');
         },
+
+        getMyBookedTrips() {
+            return API.request('/trips/my-booked-trips');
+        },
+
+
+
+        getOccupiedSeats(tripId) {
+            return API.request(`/trips/${tripId}/occupied-seats`);
+        },
         
         cancelBooking(bookingId) {
             return API.request(`/bookings/${bookingId}/cancel`, {
@@ -167,7 +177,18 @@ const API = {
         },
         cancelTrip(tripId) {
             return API.request(`/trips/${tripId}/cancel`, { method: 'POST' });
+        },
+
+        validateTicket(token) {
+            return API.request('/bookings/validate', {
+                method: 'POST',
+                body: { token: token }
+            });
         }
+
+
+
+
             },
 
     // Admin endpoints
@@ -254,6 +275,25 @@ const API = {
         broadcastNotification(data) {
             return API.request('/notifications/admin/broadcast', {
                 method: 'POST',
+                body: data
+            });
+        },
+
+
+        getAvailableDrivers() {
+            return API.request('/admin/available-drivers');
+        },
+
+        assignDriverToTrip(tripId, driverId) {
+            return API.request(`/trips/${tripId}/assign-driver`, {
+                method: 'POST',
+                body: { driver_id: driverId }
+            });
+        },
+
+        updateBus(busId, data) {
+            return API.request(`/buses/${busId}`, {
+                method: 'PUT',
                 body: data
             });
         },

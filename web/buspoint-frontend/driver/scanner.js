@@ -119,46 +119,39 @@ const DriverScanner = {
     },
     
     onScanSuccess(token) {
-        if (this.isScanning === 'processing') return;
-        this.isScanning = 'processing';
-        
-        if (this.html5QrCode) {
+        if (this.isProcessing) return;  // guard
+        this.isProcessing = true;
+
+        if (this.html5QrCode && this.html5QrCode.isScanning) {
             this.html5QrCode.pause();
+            this.isScanning = false;
         }
-        
+
         this.verifyToken(token);
     },
     
-    async verifyToken(token) {
+   async verifyToken(token) {
         Utils.showLoading('Verifying ticket...');
-        
         try {
-            // Simulate verification (replace with real API later)
-            await new Promise(r => setTimeout(r, 1000));
-            
-            const isValid = token.length >= 6;
-            const result = {
-                valid: isValid,
-                ticket: isValid ? {
-                    passenger: 'John Doe',
-                    seat: 5,
-                    route: 'Kimironko - Nyabugogo',
-                    departure: '08:00 AM'
-                } : null
-            };
-            
+            const result = await API.driver.validateTicket(token);
             Utils.hideLoading();
-            this.showResult(result);
-            
-            if (result.valid) {
-                this.updateStats('scanned');
-            } else {
-                this.updateStats('invalid');
-            }
-            
+            this.showResult({
+                valid: true,
+                ticket: {
+                    passenger: result.ticket.passenger_name,
+                    seat: result.ticket.seat,
+                    route: result.ticket.route_name,
+                    departure: Utils.formatDateTime(result.ticket.departure_time).time
+                }
+            });
+            this.updateStats('scanned');
         } catch (error) {
             Utils.hideLoading();
-            this.showResult({ valid: false, error: 'Verification failed' });
+            // error.message contains the backend error message
+            this.showResult({ valid: false, error: error.message });
+            this.updateStats('invalid');
+        } finally {
+            this.isProcessing = false;
         }
     },
     
@@ -173,6 +166,11 @@ const DriverScanner = {
     
     showResult(result) {
         const container = document.getElementById('scan-result');
+        // clear any pending auto-resume timeout
+        if (this.autoResumeTimeout) {
+            clearTimeout(this.autoResumeTimeout);
+            this.autoResumeTimeout = null;
+        }
         
         if (result.valid) {
             container.innerHTML = `
@@ -201,6 +199,11 @@ const DriverScanner = {
                 </div>
             `;
             this.playSound('success');
+            // auto-resume after 2 seconds
+            this.autoResumeTimeout = setTimeout(() => {
+                this.resumeScanning();
+                this.autoResumeTimeout = null;
+            }, 2000);
         } else {
             container.innerHTML = `
                 <div style="background: #FFEBEE; border: 2px solid var(--danger); border-radius: var(--radius-lg); padding: 1.5rem; animation: shake 0.5s ease;">
@@ -219,16 +222,39 @@ const DriverScanner = {
     },
     
     resumeScanning() {
-        document.getElementById('scan-result').innerHTML = '';
-        document.getElementById('manual-token').value = '';
-        
-        if (this.html5QrCode && !this.html5QrCode.isScanning) {
-            this.html5QrCode.resume();
+    if (this.autoResumeTimeout) {
+        clearTimeout(this.autoResumeTimeout);
+        this.autoResumeTimeout = null;
+    }
+
+    const resultDiv = document.getElementById('scan-result');
+    if (resultDiv) resultDiv.innerHTML = '';
+    const manualInput = document.getElementById('manual-token');
+    if (manualInput) manualInput.value = '';
+
+    if (this.html5QrCode) {
+        // Resume unconditionally, but only if it's paused (the library handles it)
+        this.html5QrCode.resume().then(() => {
             this.isScanning = true;
-        } else {
-            this.isScanning = true;
-        }
-    },
+            console.log('Scanner resumed');
+        }).catch(err => {
+            console.error('Failed to resume scanner:', err);
+            // If resume fails, maybe we need to restart the scanner
+            this.restartScanner();
+        });
+    } else {
+        this.startScanner(); // fallback
+    }
+},
+
+restartScanner() {
+    console.log('Restarting scanner');
+    this.destroy();
+    this.startScanner();
+},
+    
+
+
     
     updateStats(type) {
         const element = document.getElementById(type === 'scanned' ? 'scanned-count' : 'invalid-count');

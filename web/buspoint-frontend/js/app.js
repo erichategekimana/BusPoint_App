@@ -141,12 +141,12 @@ const App = {
     renderProfile() {
         const container = document.getElementById('main-content');
         const user = Auth.currentUser;
-        
+
         container.innerHTML = `
             <div style="max-width: 600px; margin: 0 auto;">
                 <div class="card">
                     <div class="card-header">
-                        <h3><i class="fas fa-user"></i> My Profile</h3>
+                        <h3><i class="fas fa-user"></i> ${Utils.t('my_profile')}</h3>
                     </div>
                     <div class="card-body">
                         <div style="text-align: center; margin-bottom: 2rem;">
@@ -161,26 +161,26 @@ const App = {
                         
                         <form onsubmit="App.updateProfile(event)">
                             <div class="form-group">
-                                <label>Full Name</label>
+                                <label>${Utils.t('full_name')}</label>
                                 <input type="text" id="profile-name" class="form-select" value="${user.full_name}">
                             </div>
                             <div class="form-group">
-                                <label>Phone Number</label>
+                                <label>${Utils.t('phone_number')}</label>
                                 <input type="tel" class="form-select" value="${user.phone_number}" disabled>
                             </div>
                             <div class="form-group">
-                                <label>Email</label>
+                                <label>${Utils.t('email')}</label>
                                 <input type="email" id="profile-email" class="form-select" value="${user.email || ''}">
                             </div>
                             <button type="submit" class="btn btn-success" style="width: 100%;">
-                                <i class="fas fa-save"></i> Save Changes
+                                <i class="fas fa-save"></i> ${Utils.t('save_changes')}
                             </button>
                         </form>
                         
                         <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--gray-200);">
-                            <h4 style="margin-bottom: 1rem; color: var(--gray-700);">Security</h4>
+                            <h4 style="margin-bottom: 1rem; color: var(--gray-700);">${Utils.t('security')}</h4>
                             <button class="btn btn-outline" onclick="App.showChangePassword()" style="width: 100%;">
-                                <i class="fas fa-lock"></i> Change Password
+                                <i class="fas fa-lock"></i> ${Utils.t('change_password')}
                             </button>
                         </div>
                     </div>

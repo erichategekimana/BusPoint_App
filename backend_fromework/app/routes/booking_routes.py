@@ -1,8 +1,9 @@
 import secrets
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify, request, g
+from datetime import datetime, timezone
 from ..database import db
 from ..models import Booking, Trip
-from ..auth import jwt_required
+from ..auth import jwt_required, roles_required
 from ..schemas import BookingCreateSchema
 from ..utils import validate_json, db_commit_or_rollback
 
@@ -22,8 +23,7 @@ def create_booking(validated_data: BookingCreateSchema):
     existing_booking = Booking.query.filter_by(
         trip_id=validated_data.trip_id,
         seat_number=validated_data.seat_number,
-        status='pending'
-    ).first()
+    ).filter(Booking.status != 'cancelled').first()
     
     if existing_booking:
         return jsonify({"error": "conflict", "message": "Seat already reserved"}), 409
@@ -70,3 +70,57 @@ def cancel_booking(booking_id):
         
     booking.status = 'cancelled'
     return jsonify({"message": "Booking cancelled"}), 200
+
+
+
+@booking_bp.route('/validate', methods=['POST'])
+@jwt_required
+@roles_required('driver')
+@db_commit_or_rollback
+def validate_ticket():
+    """
+    Driver scans a ticket token and validates it.
+    Expects JSON: {"token": "XXXXXX"}
+    """
+    data = request.get_json()
+    token = data.get('token')
+    if not token:
+        return jsonify({"error": "missing_token", "message": "Ticket token is required"}), 400
+
+    # Find the booking by token
+    booking = Booking.query.filter_by(ticket_token=token).first()
+    if not booking:
+        return jsonify({"error": "invalid_token", "message": "Ticket not found"}), 404
+
+    # Get the driver's current active trip
+    driver_id = g.current_user['id']
+    active_trip = Trip.query.filter_by(driver_id=driver_id, status='active').first()
+    if not active_trip:
+        return jsonify({"error": "no_active_trip", "message": "You don't have an active trip"}), 400
+
+    # Check if booking belongs to this trip
+    if str(booking.trip_id) != str(active_trip.id):
+        return jsonify({"error": "wrong_trip", "message": "Ticket is not for your current trip"}), 400
+
+    # Check booking status
+    if booking.status != Booking.STATUS_CONFIRMED:
+        if booking.status == Booking.STATUS_APPROVED:
+            return jsonify({"error": "already_used", "message": "Ticket already used"}), 400
+        else:
+            return jsonify({"error": "invalid_status", "message": f"Ticket status is '{booking.status}'"}), 400
+
+    # All checks passed – approve the ticket
+    booking.status = Booking.STATUS_APPROVED
+    booking.boarded_at = datetime.now(timezone.utc)
+
+
+    return jsonify({
+        "success": True,
+        "message": "Ticket validated",
+        "ticket": {
+            "passenger_name": booking.user.full_name,
+            "seat": booking.seat_number,
+            "route_name": booking.trip.route.name,
+            "departure_time": booking.trip.departure_time.isoformat()
+        }
+    }), 200

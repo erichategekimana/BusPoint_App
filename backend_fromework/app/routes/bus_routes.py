@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from ..database import db
 from ..models import Bus
 from ..auth import jwt_required, roles_required
@@ -56,3 +56,20 @@ def delete_bus(bus_id):
         
     db.session.delete(bus)
     return jsonify({"message": "Bus removed from fleet"}), 200
+
+
+
+@bus_bp.route('/<uuid:bus_id>', methods=['PUT'])
+@jwt_required
+@roles_required('admin')
+@db_commit_or_rollback
+def update_bus(bus_id):
+    """Update bus details (currently only toggles is_active)."""
+    data = request.get_json()
+    bus = Bus.query.get_or_404(bus_id)
+    
+    # Only allow updating is_active for now (or extend as needed)
+    if 'is_active' in data:
+        bus.is_active = data['is_active']
+    
+    return jsonify({"message": "Bus updated", "bus": bus.to_dict()}), 200

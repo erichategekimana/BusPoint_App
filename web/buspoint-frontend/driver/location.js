@@ -107,7 +107,8 @@ const DriverLocation = {
         try {
             await API.driver.updateLocation(this.tripId, {
                 latitude: position.latitude,
-                longitude: position.longitude
+                longitude: position.longitude,
+                speed: position.speed
             });
             console.log('Location updated:', position.latitude, position.longitude);
         } catch (error) {

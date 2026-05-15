@@ -77,6 +77,8 @@ class RouteStopSchema(BaseModel):
 class BusLocationUpdateSchema(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
+    speed: Optional[float] = Field(None, ge=0, description="Current speed in km/h")
+    heading: Optional[float] = Field(None, ge=0, le=360, description="Direction in degrees (0-360)")
 
 
 

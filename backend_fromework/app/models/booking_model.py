@@ -16,6 +16,10 @@ class Booking(db.Model):
     ticket_token = db.Column(db.String(100), unique=True)
     boarded_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    STATUS_PENDING = 'pending'
+    STATUS_CONFIRMED = 'confirmed'
+    STATUS_APPROVED = 'approved'
+    STATUS_CANCELLED = 'cancelled'
 
     # Relationships
     user = db.relationship('User', back_populates='bookings')

@@ -696,3 +696,24 @@ body {
         min-width: auto;
     }
 }
+
+
+
+.language-switcher {
+    margin-right: 1rem;
+}
+
+.lang-toggle {
+    background: none;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+}
+
+.lang-toggle:hover {
+    background: var(--gray-100);
+}

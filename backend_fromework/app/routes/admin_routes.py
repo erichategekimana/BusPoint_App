@@ -72,3 +72,18 @@ def get_recent_activity():
     activities.sort(key=lambda x: x['time'], reverse=True)
     # Return top 'limit' items
     return jsonify(activities[:limit]), 200
+
+
+@admin_bp.route('/available-drivers', methods=['GET'])
+@jwt_required
+@roles_required('admin')
+def get_available_drivers():
+    from ..models import User, Trip
+    # Drivers who have no active trip
+    drivers = User.query.filter_by(role='driver').all()
+    available = []
+    for d in drivers:
+        active_trip = Trip.query.filter_by(driver_id=d.id, status='active').first()
+        if not active_trip:
+            available.append(d.to_dict())
+    return jsonify(available), 200

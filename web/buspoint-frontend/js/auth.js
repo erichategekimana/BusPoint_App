@@ -24,9 +24,10 @@ const Auth = {
         document.getElementById('app-container').classList.add('hidden');
     },
     
-    showApp() {
+    async showApp() {
         document.getElementById('auth-container').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
+        await Utils.initLang();
         this.updateUI();
         App.init();
     },
@@ -114,7 +115,12 @@ const Auth = {
     updateUI() {
         // Update user name
         document.getElementById('user-name').textContent = this.currentUser.full_name;
-        
+        // update dropdown info
+        const dropdown = document.querySelectorAll('#user-dropdown .dropdown-item');
+        if (dropdown.length >= 2) {
+            dropdown[0].innerHTML = `<i class="fas fa-user"></i> ${Utils.t('my_profile')}`;
+            dropdown[1].innerHTML = `<i class="fas fa-sign-out-alt"></i> ${Utils.t('logout')}`;
+        }
         // Build navigation based on role
         this.buildNavigation();
     },
@@ -126,11 +132,11 @@ const Auth = {
         let navItems = [];
         
         if (role === Config.ROLES.PASSENGER) {
-            navItems = [
-                { id: 'search', icon: 'search', label: 'Find Bus' },
-                { id: 'tickets', icon: 'ticket-alt', label: 'My Tickets' },
-                { id: 'tracking', icon: 'map-marker-alt', label: 'Track Bus' }
-            ];
+        navItems = [
+            { id: 'search', icon: 'search', label: Utils.t('tab_find_bus') },
+            { id: 'tickets', icon: 'ticket-alt', label: Utils.t('tab_my_tickets') },
+            { id: 'tracking', icon: 'map-marker-alt', label: Utils.t('tab_track_bus') }
+        ];
         } else if (role === Config.ROLES.DRIVER) {
             navItems = [
                 { id: 'driver-dashboard', icon: 'tachometer-alt', label: 'Dashboard' },

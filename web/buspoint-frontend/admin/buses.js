@@ -180,20 +180,26 @@ const AdminBuses = {
         Utils.modal.open(modalContent, { title: 'Edit Bus' });
     },
     
+    
     async updateBus(busId) {
         const isActive = document.getElementById('edit-bus-status').value === 'true';
         
-        Utils.showLoading('Updating...');
+        Utils.showLoading('Updating bus status...');
         
-        // In real app, call update API
-        setTimeout(() => {
+        try {
+            await API.admin.updateBus(busId, { is_active: isActive });
             Utils.hideLoading();
             Utils.modal.close();
-            Utils.toast('Bus updated', 'success');
-            this.loadBuses().then(() => this.render());
-        }, 1000);
+            Utils.toast('Bus status updated', 'success');
+            await this.loadBuses();
+            this.render();
+        } catch (error) {
+            Utils.hideLoading();
+            Utils.toast('Failed to update bus', 'error');
+        }
     },
-    
+
+        
     async deleteBus(busId) {
         if (!confirm('Are you sure you want to delete this bus? This action cannot be undone.')) {
             return;

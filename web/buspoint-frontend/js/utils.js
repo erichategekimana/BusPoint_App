@@ -118,7 +118,7 @@ const Utils = {
         }, duration);
     },
 
-    // Show loading overlay
+        // Show loading overlay
     showLoading(message = 'Loading...') {
         const overlay = document.createElement('div');
         overlay.id = 'loading-overlay';
@@ -133,6 +133,18 @@ const Utils = {
     hideLoading() {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.remove();
+    },
+
+    // Calculate distance in kilometers using Haversine formula
+    calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     },
 
     // Modal helpers
@@ -163,3 +175,57 @@ const Utils = {
     }
 };
 
+// Translation management
+Utils.translations = {};
+Utils.currentLang = 'en';
+
+Utils.t = function(key) {
+    return this.translations[key] || key;
+};
+
+Utils.loadTranslations = async function(lang) {
+    try {
+        const response = await fetch(`locales/${lang}.json`);
+        if (!response.ok) throw new Error('Translation file not found');
+        const data = await response.json();
+        this.translations = data;
+        this.currentLang = lang;
+        return true;
+    } catch (error) {
+        console.error('Failed to load translations:', error);
+        return false;
+    }
+};
+
+// Language switcher methods
+Utils.initLang = async function() {
+    const saved = localStorage.getItem('preferred_lang');
+    this.currentLang = (saved === 'en' || saved === 'rw') ? saved : 'en';
+    await this.loadTranslations(this.currentLang);
+    this.updateLangUI();
+    this.setupLangListeners();
+};
+
+Utils.setLang = function(lang) {
+    if (lang === this.currentLang) return;
+    this.currentLang = lang;
+    localStorage.setItem('preferred_lang', lang);
+    window.location.reload();
+};
+
+Utils.updateLangUI = function() {
+    const flagSpan = document.getElementById('lang-flag');
+    if (flagSpan) {
+        flagSpan.textContent = this.currentLang === 'en' ? '🇬🇧' : '🇷🇼';
+    }
+};
+
+Utils.setupLangListeners = function() {
+    const toggleBtn = document.getElementById('lang-toggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const newLang = this.currentLang === 'en' ? 'rw' : 'en';
+            this.setLang(newLang);
+        });
+    }
+};

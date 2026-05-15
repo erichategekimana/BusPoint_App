@@ -6,31 +6,28 @@ const PassengerBooking = {
     bookingData: {},
     
     init() {
-
         const container = document.getElementById('main-content');
         container.innerHTML = `
             <div class="passenger-home">
                 <div class="booking-container">
                     <div id="booking-stepper"></div>
                     <div id="step-content" class="card" style="margin-top: 2rem; min-height: 400px;">
-                        </div>
+                    </div>
                 </div>
             </div>
         `;
-
-
-
         this.renderStepper();
         this.showStep(1);
     },
     
     renderStepper() {
+        // Step labels – these keys need to exist in your JSON files
         const steps = [
-            { id: 1, label: 'Route' },
-            { id: 2, label: 'Trip' },
-            { id: 3, label: 'Seat' },
-            { id: 4, label: 'Payment' },
-            { id: 5, label: 'Confirm' }
+            { id: 1, label: Utils.t('step_route') },
+            { id: 2, label: Utils.t('step_trip') },
+            { id: 3, label: Utils.t('step_seat') },
+            { id: 4, label: Utils.t('step_payment') },
+            { id: 5, label: Utils.t('step_confirm') }
         ];
         
         const stepperHTML = `
@@ -77,7 +74,7 @@ const PassengerBooking = {
     },
     
     async renderRouteSelection(container) {
-        Utils.showLoading('Loading stops...');
+        Utils.showLoading(Utils.t('loading')); // key 'loading' already exists
         
         try {
             const stops = await API.admin.getStops();
@@ -87,14 +84,14 @@ const PassengerBooking = {
                 <div class="step-content">
                     <h3 style="margin-bottom: 1.5rem; color: var(--gray-800);">
                         <i class="fas fa-map-marked-alt" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                        Select Your Route
+                        ${Utils.t('route_selection')}
                     </h3>
                     
                     <div class="route-selection">
                         <div class="location-input">
-                            <label>Pickup Location</label>
+                            <label>${Utils.t('pickup_location')}</label>
                             <select class="location-select" id="pickup-stop">
-                                <option value="">Select pickup stop</option>
+                                <option value="">${Utils.t('select_pickup_stop')}</option>
                                 ${stops.map(stop => `
                                     <option value="${stop.id}">${stop.name}</option>
                                 `).join('')}
@@ -106,9 +103,9 @@ const PassengerBooking = {
                         </button>
                         
                         <div class="location-input">
-                            <label>Drop-off Location</label>
+                            <label>${Utils.t('dropoff_location')}</label>
                             <select class="location-select" id="dropoff-stop">
-                                <option value="">Select drop-off stop</option>
+                                <option value="">${Utils.t('select_dropoff_stop')}</option>
                                 ${stops.map(stop => `
                                     <option value="${stop.id}">${stop.name}</option>
                                 `).join('')}
@@ -119,20 +116,19 @@ const PassengerBooking = {
                     <div class="date-input">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--gray-700);">
                             <i class="fas fa-calendar" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                            Travel Date
+                            ${Utils.t('travel_date')}
                         </label>
                         <input type="date" id="travel-date" min="${new Date().toISOString().split('T')[0]}">
                     </div>
                     
                     <div style="margin-top: 2rem; text-align: right;">
                         <button class="btn btn-success btn-lg" onclick="PassengerBooking.searchTrips()">
-                            <i class="fas fa-search"></i> Find Buses
+                            <i class="fas fa-search"></i> ${Utils.t('find_buses')}
                         </button>
                     </div>
                 </div>
             `;
             
-            // Set default date to tomorrow
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('travel-date').value = tomorrow.toISOString().split('T')[0];
@@ -142,8 +138,8 @@ const PassengerBooking = {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-exclamation-circle"></i>
-                    <h3>Failed to load stops</h3>
-                    <p>Please try again later</p>
+                    <h3>${Utils.t('failed_to_load_stops')}</h3>
+                    <p>${Utils.t('loading')}</p>
                 </div>
             `;
         }
@@ -163,24 +159,24 @@ const PassengerBooking = {
         const date = document.getElementById('travel-date').value;
         
         if (!pickupId || !dropoffId || !date) {
-            Utils.toast('Please fill in all fields', 'warning');
+            Utils.toast(Utils.t('please_fill_all_fields'), 'warning');
             return;
         }
         
         if (pickupId === dropoffId) {
-            Utils.toast('Pickup and drop-off cannot be the same', 'warning');
+            Utils.toast(Utils.t('pickup_dropoff_same'), 'warning');
             return;
         }
         
         this.bookingData = { pickupId, dropoffId, date };
-        Utils.showLoading('Searching trips...');
+        Utils.showLoading(Utils.t('loading'));
         
         try {
             const trips = await API.passenger.searchTrips(pickupId, dropoffId, date);
             Utils.hideLoading();
             
             if (trips.length === 0) {
-                Utils.toast('No trips found for this route and date', 'info');
+                Utils.toast(Utils.t('no_trips_found'), 'info');
                 return;
             }
             
@@ -197,7 +193,7 @@ const PassengerBooking = {
             <div class="step-content">
                 <h3 style="margin-bottom: 1.5rem; color: var(--gray-800);">
                     <i class="fas fa-bus" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                    Select Your Trip
+                    ${Utils.t('select_trip_title')}
                 </h3>
                 
                 <div class="trips-list">
@@ -207,8 +203,8 @@ const PassengerBooking = {
                             <div class="trip-card" onclick="PassengerBooking.selectTrip('${trip.id}')" data-trip-id="${trip.id}">
                                 <div class="trip-time">
                                     <div class="departure">${departure.time}</div>
-                                    <div class="duration"><i class="fas fa-clock"></i> 45 min</div>
-                                    <div class="arrival">Arrives ~${this.calculateArrival(trip.departure_time, 45)}</div>
+                                    <div class="duration"><i class="fas fa-clock"></i> 45 ${Utils.t('minutes')}</div>
+                                    <div class="arrival">${Utils.t('arrives')} ~${this.calculateArrival(trip.departure_time, 45)}</div>
                                 </div>
                                 <div class="trip-info">
                                     <div class="route-name">
@@ -216,12 +212,12 @@ const PassengerBooking = {
                                     </div>
                                     <div class="bus-info">
                                         <span><i class="fas fa-bus"></i> ${trip.bus_plate}</span>
-                                        <span><i class="fas fa-chair"></i> ${trip.available_seats} seats left</span>
+                                        <span><i class="fas fa-chair"></i> ${trip.available_seats} ${Utils.t('seats_left')}</span>
                                     </div>
                                 </div>
                                 <div class="trip-price">
                                     <div class="amount">${Utils.formatCurrency(500)}</div>
-                                    <div class="seats">${trip.available_seats} available</div>
+                                    <div class="seats">${trip.available_seats} ${Utils.t('available')}</div>
                                 </div>
                             </div>
                         `;
@@ -230,7 +226,7 @@ const PassengerBooking = {
                 
                 <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
                     <button class="btn btn-secondary" onclick="PassengerBooking.showStep(1)">
-                        <i class="fas fa-arrow-left"></i> Back
+                        <i class="fas fa-arrow-left"></i> ${Utils.t('back')}
                     </button>
                 </div>
             </div>
@@ -246,36 +242,35 @@ const PassengerBooking = {
     selectTrip(tripId) {
         this.selectedTrip = this.availableTrips.find(t => t.id === tripId);
         
-        // Update UI
         document.querySelectorAll('.trip-card').forEach(card => {
             card.classList.remove('selected');
         });
         document.querySelector(`[data-trip-id="${tripId}"]`).classList.add('selected');
         
-        // Auto advance after short delay
         setTimeout(() => {
             this.showStep(3);
         }, 500);
     },
     
     async renderSeatSelection(container) {
-        Utils.showLoading('Loading seat map...');
+        Utils.showLoading(Utils.t('loading'));
         
         try {
-            // Get trip details to check occupied seats
-            const tripDetails = await API.passenger.getTripDetails(this.selectedTrip.id);
+            const [tripDetails, occupiedSeatsData] = await Promise.all([
+                API.passenger.getTripDetails(this.selectedTrip.id),
+                API.passenger.getOccupiedSeats(this.selectedTrip.id)
+            ]);
             Utils.hideLoading();
             
-            // Generate seat layout (4 seats per row, 60 total)
             const totalSeats = tripDetails.bus_details.capacity || 60;
-            const occupiedSeats = []; // This would come from backend
+            const occupiedSeats = occupiedSeatsData.seats || [];
             
             let seatsHTML = '';
             for (let i = 1; i <= totalSeats; i++) {
                 const isOccupied = occupiedSeats.includes(i);
                 seatsHTML += `
                     <div class="seat ${isOccupied ? 'occupied' : ''} ${this.selectedSeat === i ? 'selected' : ''}" 
-                         onclick="${isOccupied ? '' : `PassengerBooking.selectSeat(${i})`}">
+                        onclick="${isOccupied ? '' : `PassengerBooking.selectSeat(${i})`}">
                         ${i}
                     </div>
                 `;
@@ -285,13 +280,13 @@ const PassengerBooking = {
                 <div class="step-content">
                     <h3 style="margin-bottom: 1.5rem; color: var(--gray-800); text-align: center;">
                         <i class="fas fa-chair" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                        Select Your Seat
+                        ${Utils.t('seat_selection')}
                     </h3>
                     
                     <div class="seat-selection">
                         <div class="bus-layout">
                             <div class="bus-front">
-                                <i class="fas fa-steering-wheel"></i> FRONT
+                                <i class="fas fa-steering-wheel"></i> ${Utils.t('front')}
                             </div>
                             <div class="seats-grid">
                                 ${seatsHTML}
@@ -299,15 +294,15 @@ const PassengerBooking = {
                             <div class="seat-legend">
                                 <div class="legend-item">
                                     <div class="legend-box available"></div>
-                                    <span>Available</span>
+                                    <span>${Utils.t('available')}</span>
                                 </div>
                                 <div class="legend-item">
                                     <div class="legend-box selected"></div>
-                                    <span>Selected</span>
+                                    <span>${Utils.t('selected')}</span>
                                 </div>
                                 <div class="legend-item">
                                     <div class="legend-box occupied"></div>
-                                    <span>Occupied</span>
+                                    <span>${Utils.t('occupied')}</span>
                                 </div>
                             </div>
                         </div>
@@ -315,25 +310,23 @@ const PassengerBooking = {
                     
                     <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
                         <button class="btn btn-secondary" onclick="PassengerBooking.showStep(2)">
-                            <i class="fas fa-arrow-left"></i> Back
+                            <i class="fas fa-arrow-left"></i> ${Utils.t('back')}
                         </button>
                         <button class="btn btn-success btn-lg" onclick="PassengerBooking.proceedToPayment()" ${!this.selectedSeat ? 'disabled' : ''}>
-                            Continue <i class="fas fa-arrow-right"></i>
+                            ${Utils.t('continue')} <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
             `;
-            
         } catch (error) {
             Utils.hideLoading();
-            Utils.toast('Failed to load seat map', 'error');
+            Utils.toast(Utils.t('failed_load_seat_map'), 'error');
         }
     },
     
     selectSeat(seatNumber) {
         this.selectedSeat = seatNumber;
         
-        // Update UI
         document.querySelectorAll('.seat').forEach((seat, index) => {
             seat.classList.remove('selected');
             if (index + 1 === seatNumber) {
@@ -341,14 +334,13 @@ const PassengerBooking = {
             }
         });
         
-        // Enable continue button
         const continueBtn = document.querySelector('.btn-success');
         if (continueBtn) continueBtn.disabled = false;
     },
     
     proceedToPayment() {
         if (!this.selectedSeat) {
-            Utils.toast('Please select a seat', 'warning');
+            Utils.toast(Utils.t('select_seat_warning'), 'warning');
             return;
         }
         this.showStep(4);
@@ -359,26 +351,26 @@ const PassengerBooking = {
             <div class="step-content">
                 <h3 style="margin-bottom: 1.5rem; color: var(--gray-800); text-align: center;">
                     <i class="fas fa-credit-card" style="color: var(--primary); margin-right: 0.5rem;"></i>
-                    Payment
+                    ${Utils.t('payment')}
                 </h3>
                 
                 <div class="payment-section">
                     <div class="payment-summary">
-                        <h3>Booking Summary</h3>
+                        <h3>${Utils.t('booking_summary')}</h3>
                         <div class="summary-row">
-                            <span>Route</span>
+                            <span>${Utils.t('route')}</span>
                             <span>${this.selectedTrip.route_name}</span>
                         </div>
                         <div class="summary-row">
-                            <span>Departure</span>
+                            <span>${Utils.t('departure')}</span>
                             <span>${Utils.formatDateTime(this.selectedTrip.departure_time).full}</span>
                         </div>
                         <div class="summary-row">
-                            <span>Seat Number</span>
+                            <span>${Utils.t('seat')}</span>
                             <span>#${this.selectedSeat}</span>
                         </div>
                         <div class="summary-row">
-                            <span>Total</span>
+                            <span>${Utils.t('total')}</span>
                             <span>${Utils.formatCurrency(500)}</span>
                         </div>
                     </div>
@@ -387,8 +379,8 @@ const PassengerBooking = {
                         <div class="momo-logo">
                             <i class="fas fa-mobile-alt"></i> MTN MoMo
                         </div>
-                        <h4>Pay with Mobile Money</h4>
-                        <p>Enter your MTN MoMo number. You will receive a prompt on your phone to confirm payment.</p>
+                        <h4>${Utils.t('pay_with_momo')}</h4>
+                        <p>${Utils.t('enter_momo_number')}</p>
                         
                         <div class="phone-input">
                             <input type="tel" id="momo-phone" placeholder="078XXXXXXX" maxlength="10" 
@@ -396,14 +388,14 @@ const PassengerBooking = {
                         </div>
                         
                         <button class="btn btn-success btn-lg" onclick="PassengerBooking.processPayment()" style="width: 100%;">
-                            <i class="fas fa-lock"></i> Pay ${Utils.formatCurrency(500)}
+                            <i class="fas fa-lock"></i> ${Utils.t('pay')} ${Utils.formatCurrency(500)}
                         </button>
                     </div>
                 </div>
                 
                 <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
                     <button class="btn btn-secondary" onclick="PassengerBooking.showStep(3)">
-                        <i class="fas fa-arrow-left"></i> Back
+                        <i class="fas fa-arrow-left"></i> ${Utils.t('back')}
                     </button>
                 </div>
             </div>
@@ -414,14 +406,13 @@ const PassengerBooking = {
         const phone = document.getElementById('momo-phone').value;
         
         if (!Utils.validatePhone(phone)) {
-            Utils.toast('Please enter a valid MTN number', 'warning');
+            Utils.toast(Utils.t('enter_valid_mtn'), 'warning');
             return;
         }
         
-        Utils.showLoading('Initializing payment...');
+        Utils.showLoading(Utils.t('loading'));
         
         try {
-            // Step 1: Create booking
             const booking = await API.passenger.createBooking({
                 trip_id: this.selectedTrip.id,
                 seat_number: this.selectedSeat,
@@ -431,15 +422,12 @@ const PassengerBooking = {
             
             this.createdBooking = booking.booking;
             
-            // Step 2: Initialize payment
             const payment = await API.passenger.initializePayment({
                 booking_id: booking.booking.id,
                 phone_number: phone
             });
             
             Utils.hideLoading();
-            
-            // Show payment pending UI
             this.showPaymentPending(payment.transaction_ref);
             
         } catch (error) {
@@ -454,25 +442,23 @@ const PassengerBooking = {
                 <div style="width: 100px; height: 100px; background: var(--primary-lighter); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem;">
                     <i class="fas fa-mobile-alt" style="font-size: 3rem; color: var(--primary);"></i>
                 </div>
-                <h3 style="margin-bottom: 1rem; color: var(--gray-800);">Check Your Phone</h3>
+                <h3 style="margin-bottom: 1rem; color: var(--gray-800);">${Utils.t('check_phone')}</h3>
                 <p style="color: var(--gray-600); margin-bottom: 2rem;">
-                    We've sent a payment request to your MTN MoMo number.<br>
-                    Please enter your PIN to complete the payment.
+                    ${Utils.t('payment_pending_message')}
                 </p>
                 <div style="background: var(--gray-100); padding: 1rem; border-radius: var(--radius); margin-bottom: 2rem;">
-                    <small style="color: var(--gray-500);">Transaction Reference</small>
+                    <small style="color: var(--gray-500);">${Utils.t('transaction_reference')}</small>
                     <div style="font-family: monospace; font-size: 1.1rem; color: var(--gray-700);">${transactionRef}</div>
                 </div>
                 <button class="btn btn-success" onclick="PassengerBooking.simulatePaymentSuccess('${transactionRef}')">
-                    <i class="fas fa-check"></i> I've Paid (Simulate)
+                    <i class="fas fa-check"></i> ${Utils.t('ive_paid')}
                 </button>
             </div>
         `;
     },
     
-    // For testing - simulate webhook
     async simulatePaymentSuccess(transactionRef) {
-        Utils.showLoading('Confirming payment...');
+        Utils.showLoading(Utils.t('loading'));
         
         try {
             await API.request('/payments/webhook/momo', {
@@ -497,39 +483,39 @@ const PassengerBooking = {
                 <div class="confirmation-icon">
                     <i class="fas fa-check"></i>
                 </div>
-                <h2>Booking Confirmed!</h2>
-                <p>Your ticket has been booked successfully. Show the QR code to the driver when boarding.</p>
+                <h2>${Utils.t('booking_confirmed')}</h2>
+                <p>${Utils.t('booking_success')}</p>
                 
                 <div class="ticket-preview">
                     <div class="ticket-header">
                         <h3><i class="fas fa-bus"></i> BusPoint</h3>
-                        <span class="badge badge-success">CONFIRMED</span>
+                        <span class="badge badge-success">${Utils.t('confirmed').toUpperCase()}</span>
                     </div>
                     <div class="ticket-card-body">
                         <div class="ticket-route">
                             <div class="from">
-                                <h4>From</h4>
-                                <p>Pickup Stop</p>
+                                <h4>${Utils.t('from')}</h4>
+                                <p>${Utils.t('pickup_stop')}</p>
                             </div>
                             <div class="arrow">
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                             <div class="to">
-                                <h4>To</h4>
-                                <p>Drop-off Stop</p>
+                                <h4>${Utils.t('to')}</h4>
+                                <p>${Utils.t('dropoff_stop')}</p>
                             </div>
                         </div>
                         <div class="ticket-details">
                             <div class="ticket-detail">
-                                <label>Date</label>
+                                <label>${Utils.t('date')}</label>
                                 <span>${this.bookingData.date}</span>
                             </div>
                             <div class="ticket-detail">
-                                <label>Seat</label>
+                                <label>${Utils.t('seat')}</label>
                                 <span>#${this.selectedSeat}</span>
                             </div>
                             <div class="ticket-detail">
-                                <label>Token</label>
+                                <label>${Utils.t('token')}</label>
                                 <span>${this.createdBooking?.ticket_token || 'XXXXXX'}</span>
                             </div>
                         </div>
@@ -539,16 +525,15 @@ const PassengerBooking = {
                 
                 <div style="display: flex; gap: 1rem; justify-content: center;">
                     <button class="btn btn-success btn-lg" onclick="App.navigate('tickets')">
-                        <i class="fas fa-ticket-alt"></i> View My Tickets
+                        <i class="fas fa-ticket-alt"></i> ${Utils.t('view_my_tickets')}
                     </button>
                     <button class="btn btn-outline" onclick="App.navigate('search')">
-                        <i class="fas fa-search"></i> Book Another
+                        <i class="fas fa-search"></i> ${Utils.t('book_another')}
                     </button>
                 </div>
             </div>
         `;
         
-        // Generate QR code
         if (this.createdBooking?.ticket_token) {
             setTimeout(() => {
                 QRGenerator.generate(this.createdBooking.ticket_token, 'ticket-qr');

@@ -26,5 +26,6 @@ class Bus(db.Model):
             "plate_number": self.plate_number,
             "bus_type": self.bus_type,
             "capacity": self.capacity,
-            "is_active": self.is_active
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }   

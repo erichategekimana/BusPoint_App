@@ -159,14 +159,14 @@ const AdminRoutes = {
                 <div id="route-map" style="height: 300px; border-radius: var(--radius); margin-bottom: 1rem;"></div>
                 <h4 style="margin-bottom: 1rem;">Stop Sequence</h4>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    ${route.path?.map((rs, index) => `
+                    ${route.path?.map(stop => `
                         <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--gray-100); border-radius: var(--radius);">
                             <div style="width: 28px; height: 28px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">
-                                ${rs.order}
+                                ${stop.order}
                             </div>
                             <div style="flex: 1;">
-                                <div style="font-weight: 500;">${rs.stop?.name || 'Unknown'}</div>
-                                <div style="font-size: 0.8rem; color: var(--gray-500);">+${rs.estimated_minutes_from_start || 0} min from start</div>
+                                <div style="font-weight: 500;">${stop.stop_name}</div>
+                                <div style="font-size: 0.8rem; color: var(--gray-500);">+${stop.minutes || 0} min from start</div>
                             </div>
                         </div>
                     `).join('') || '<p style="color: var(--gray-500);">No stops configured</p>'}
@@ -183,16 +183,26 @@ const AdminRoutes = {
     },
     
     manageStops(routeId = null) {
+        // If routeId is provided, get the stops already in this route
+        let routeStopIds = [];
+        if (routeId) {
+            const route = this.routes.find(r => r.id === routeId);
+            if (route && route.path) {
+                routeStopIds = route.path.map(stop => stop.stop_id);
+            }
+        }
+        const availableStops = this.stops.filter(stop => !routeStopIds.includes(stop.id));
+
         const modalContent = `
             <div style="text-align: left;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4>All Stops</h4>
+                    <h4>${routeId ? 'Add Stops to Route' : 'All Stops'}</h4>
                     <button class="btn btn-success btn-sm" onclick="AdminRoutes.showAddStop()">
                         <i class="fas fa-plus"></i> Add Stop
                     </button>
                 </div>
                 <div style="max-height: 400px; overflow-y: auto;">
-                    ${this.stops.map(stop => `
+                    ${availableStops.map(stop => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--gray-100);">
                             <div>
                                 <div style="font-weight: 500;">${stop.name}</div>
@@ -210,7 +220,6 @@ const AdminRoutes = {
                 </div>
             </div>
         `;
-        
         Utils.modal.open(modalContent, { title: routeId ? 'Add Stops to Route' : 'Manage Stops' });
     },
     

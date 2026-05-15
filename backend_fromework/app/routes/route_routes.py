@@ -2,7 +2,7 @@ from dataclasses import field
 
 from flask import Blueprint, jsonify
 from ..database import db
-from ..models import Route, RouteStop, Stop
+from ..models import Route, RouteStop, Stop, Trip
 from ..auth import jwt_required, roles_required
 from ..schemas import RouteCreateSchema, RouteStopSchema
 from ..utils import validate_json, db_commit_or_rollback
@@ -21,7 +21,12 @@ def get_all_routes():
         route_data = r.to_dict()
         # Sort stops by order so the frontend sees a logical path
         route_data['path'] = [
-            {"stop": rs.stop.name, "order": rs.stop_order} 
+            {
+                "stop_id": str(rs.stop.id),
+                "stop_name": rs.stop.name,
+                "order": rs.stop_order,
+                "minutes": rs.estimated_minutes_from_start
+            } 
             for rs in sorted(r.route_stops, key=lambda x: x.stop_order)
         ]
         results.append(route_data)
@@ -36,7 +41,12 @@ def get_route_details(route_id):
     route = Route.query.get_or_404(route_id)
     route_data = route.to_dict()
     route_data['path'] = [
-        {"stop": rs.stop.name, "order": rs.stop_order} 
+        {
+            "stop_id": str(rs.stop.id),
+            "stop_name": rs.stop.name,
+            "order": rs.stop_order,
+            "minutes": rs.estimated_minutes_from_start
+        } 
         for rs in sorted(route.route_stops, key=lambda x: x.stop_order)
     ]
     return jsonify(route_data), 200
